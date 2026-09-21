@@ -62,7 +62,7 @@ export default function Audit() {
               <SortTh className="col-num hide-sm" label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="col-date" label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="col-chip" label="Actor" col="actor" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh className="col-subject" label="Document" col="document" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-num" label="Document" col="document" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="col-subject" label="Change" col="change" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="col-chip" label="Category" col="category" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
             </tr>
@@ -81,7 +81,7 @@ export default function Audit() {
                 <td className="col-num hide-sm">{r.id}</td>
                 <td className="col-date"><AuditWhen value={r.created_at} /></td>
                 <td className="col-chip"><span className={`chip ${r.actor}`}>{r.actor}</span></td>
-                <td className="col-subject">{r.email_id}</td>
+                <td className="col-num">{r.email_id}</td>
                 <td className="col-subject">{r.change_type}</td>
                 <td className="col-chip"><span className={`chip ${r.category}`}>{r.category}</span></td>
               </tr>
