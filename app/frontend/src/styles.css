@@ -378,6 +378,33 @@ select option, .dark-select option {
   border-radius: 10px;
   padding: 6px 8px;
 }
+.field-box.mismatch {
+  border-color: #f0a8b0;
+  box-shadow: 0 0 0 1px rgba(251, 113, 133, 0.55), 0 0 22px rgba(251, 113, 133, 0.32);
+}
+html[data-theme="light"] .field-box.mismatch {
+  border-color: #e11d48;
+  box-shadow: 0 0 0 1px rgba(225, 29, 72, 0.35), 0 0 18px rgba(225, 29, 72, 0.18);
+}
+.line-bad {
+  background: rgba(251, 113, 133, 0.22);
+  box-shadow: inset 3px 0 0 #fb7185;
+}
+html[data-theme="light"] .line-bad {
+  background: rgba(225, 29, 72, 0.12);
+  box-shadow: inset 3px 0 0 #e11d48;
+}
+.extract-line {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.extract-line b { color: var(--muted); font-weight: 500; }
+.inline-preview { padding: 4px 4px 8px; }
+.preview-row td { background: var(--bg); border-bottom: 1px solid var(--line); }
+tr.row-open { background: var(--hover); }
 
 .split {
   display: grid;

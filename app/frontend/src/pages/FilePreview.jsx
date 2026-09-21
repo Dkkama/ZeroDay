@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { attachmentUrl, token } from "../api";
+import { HighlightText } from "../docs.jsx";
 
 function isTextFile(ext) {
   return ["txt", "csv", "json", "xml", "md", "log"].includes((ext || "").toLowerCase());
@@ -83,7 +84,7 @@ function SheetGrid({ data }) {
   );
 }
 
-export default function FilePreview({ emailId, att }) {
+export default function FilePreview({ emailId, att, needles = [] }) {
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
   const [sheet, setSheet] = useState(null);
@@ -155,8 +156,8 @@ export default function FilePreview({ emailId, att }) {
       {spreadsheet && <SheetGrid data={sheet || parseExtractedSheet(att.text)} />}
       {!spreadsheet && ext === "pdf" && url && <iframe title={att.filename} src={url} />}
       {!spreadsheet && isImage(ext) && url && <img className="preview-img" alt={att.filename} src={url} />}
-      {!spreadsheet && (isTextFile(ext) || text) && (
-        <pre className="pre">{text || att.text}</pre>
+      {!spreadsheet && (text || att.text) && (isTextFile(ext) || text) && (
+        <HighlightText text={text || att.text} needles={needles} />
       )}
       {!spreadsheet && !isTextFile(ext) && ext !== "pdf" && !isImage(ext) && (
         <pre className="pre">{text || att.text || att.filename}</pre>

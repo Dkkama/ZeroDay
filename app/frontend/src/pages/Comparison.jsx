@@ -4,16 +4,7 @@ import { api } from "../api";
 import FilePreview from "./FilePreview.jsx";
 import { statusClass, statusLabel } from "../status";
 import { SortTh, emailNum, nextSort, rowOpen, sortRows } from "../sort.jsx";
-
-const LABELS = {
-  shipper: "Shipper",
-  consignee: "Consignee",
-  notify_party: "Notify party",
-  port_of_loading: "Port of loading",
-  port_of_discharge: "Port of discharge",
-  container_count: "Container count",
-  gross_weight_kg: "Gross weight (kg)",
-};
+import { ExtractText, FIELD_LABELS, mismatchNeedles, valuesDiffer } from "../docs.jsx";
 
 export default function Comparison() {
   const [params, setParams] = useSearchParams();
@@ -113,6 +104,7 @@ export default function Comparison() {
   if (!doc || doc.email_id !== id) return <p className="muted">Opening {id}…</p>;
   const si = (doc.attachments || []).find((a) => a.kind === "si");
   const bl = (doc.attachments || []).find((a) => a.kind === "bl");
+  const needles = mismatchNeedles(doc.si_fields, doc.bl_fields);
 
   return (
     <div>
@@ -130,8 +122,8 @@ export default function Comparison() {
 
       <div className="fields" key={doc.email_id}>
         {(doc.field_view || []).map((f) => (
-          <div className="field-box" key={`${doc.email_id}-${f.name}`}>
-            <b>{LABELS[f.name] || f.name}</b>
+          <div className={`field-box${valuesDiffer(f.si, f.bl) ? " mismatch" : ""}`} key={`${doc.email_id}-${f.name}`}>
+            <b>{FIELD_LABELS[f.name] || f.name}</b>
             {f.empty ? (
               <input
                 placeholder="AI could not read this field — double-click to type"
@@ -166,22 +158,22 @@ export default function Comparison() {
 
       <div className="split">
         <div>
-          <h3>SI (model extract)</h3>
-          <pre className="pre">{JSON.stringify(doc.si_fields, null, 2)}</pre>
+          <h3>Shipping instruction</h3>
+          <ExtractText fields={doc.si_fields} other={doc.bl_fields} />
         </div>
         <div>
-          <h3>BL (model extract)</h3>
-          <pre className="pre">{JSON.stringify(doc.bl_fields, null, 2)}</pre>
+          <h3>Bill of lading</h3>
+          <ExtractText fields={doc.bl_fields} other={doc.si_fields} />
         </div>
       </div>
       <div className="split">
         <div>
           <h3>SI original — {si?.filename || "none"}</h3>
-          <FilePreview key={`${doc.email_id}-si`} emailId={doc.email_id} att={si || (doc.attachments || [])[0]} />
+          <FilePreview key={`${doc.email_id}-si`} emailId={doc.email_id} att={si || (doc.attachments || [])[0]} needles={needles} />
         </div>
         <div>
           <h3>BL original — {bl?.filename || "none"}</h3>
-          <FilePreview key={`${doc.email_id}-bl`} emailId={doc.email_id} att={bl || (doc.attachments || [])[1]} />
+          <FilePreview key={`${doc.email_id}-bl`} emailId={doc.email_id} att={bl || (doc.attachments || [])[1]} needles={needles} />
         </div>
       </div>
     </div>
