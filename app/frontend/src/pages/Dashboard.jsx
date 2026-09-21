@@ -8,20 +8,20 @@ import { api } from "../api";
 
 const ORDER = ["BL_COMPARISON", "SI_REQUEST", "INVOICE_QUERY", "GENERAL", "SPAM"];
 const COLORS = {
-  BL_COMPARISON: "#e11d48",
-  SI_REQUEST: "#3b82f6",
-  INVOICE_QUERY: "#d97706",
-  GENERAL: "#14b8a6",
-  SPAM: "#6b7280",
-  OK: "#16a34a",
-  MISMATCH: "#e11d48",
-  NEEDS_REVIEW: "#f59e0b",
+  BL_COMPARISON: "#fb7185",
+  SI_REQUEST: "#60a5fa",
+  INVOICE_QUERY: "#fbbf24",
+  GENERAL: "#2dd4bf",
+  SPAM: "#94a3b8",
+  OK: "#34d399",
+  MISMATCH: "#fb7185",
+  NEEDS_REVIEW: "#fbbf24",
 };
 const REASON_COLORS = {
-  wrong_doc_type: "#e11d48",
-  missing_attachment: "#3b82f6",
-  unreadable: "#d97706",
-  missing_value: "#a855f7",
+  wrong_doc_type: "#fb7185",
+  missing_attachment: "#60a5fa",
+  unreadable: "#fbbf24",
+  missing_value: "#c084fc",
 };
 const REASON_LABELS = {
   wrong_doc_type: "Wrong document type",
@@ -100,7 +100,7 @@ export default function Dashboard() {
           <h3>Category mix</h3>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={catData} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-              <CartesianGrid stroke="#2a3842" vertical={false} />
+              <CartesianGrid stroke="#3a4a55" vertical={false} />
               <XAxis dataKey="name" hide />
               <YAxis stroke="#8b9aa6" allowDecimals={false} />
               <Tooltip
@@ -152,7 +152,7 @@ export default function Dashboard() {
             <>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={reasonData}>
-                  <CartesianGrid stroke="#2a3842" vertical={false} />
+                  <CartesianGrid stroke="#3a4a55" vertical={false} />
                   <XAxis dataKey="name" stroke="#8b9aa6" />
                   <YAxis stroke="#8b9aa6" allowDecimals={false} />
                   <Tooltip

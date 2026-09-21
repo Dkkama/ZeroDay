@@ -1,22 +1,22 @@
 :root {
-  --bg: #0e1418;
-  --bg-2: #141c22;
-  --panel: #182229;
-  --line: #2a3842;
-  --text: #e8eef2;
-  --muted: #8b9aa6;
-  --red: #e11d48;
-  --blue: #3b82f6;
-  --amber: #d97706;
-  --teal: #0f766e;
-  --gray: #6b7280;
-  --human: #a855f7;
-  --ok: #16a34a;
-  --warn: #f59e0b;
+  --bg: #151c22;
+  --bg-2: #1c262e;
+  --panel: #243039;
+  --line: #3a4a55;
+  --text: #eef3f6;
+  --muted: #9aabb6;
+  --red: #fb7185;
+  --blue: #60a5fa;
+  --amber: #fbbf24;
+  --teal: #2dd4bf;
+  --gray: #94a3b8;
+  --human: #c084fc;
+  --ok: #34d399;
+  --warn: #fbbf24;
   --radius: 12px;
-  --hover: #1f2c34;
-  --btn: #24313a;
-  --deep: #0b1014;
+  --hover: #2c3a44;
+  --btn: #2d3b45;
+  --deep: #12181d;
   --text-zoom: 1;
 }
 
@@ -200,7 +200,7 @@ a { color: inherit; }
   cursor: pointer;
 }
 .btn.primary { background: #1d4e63; border-color: #2a6b84; }
-.btn.danger { background: #3f1d28; border-color: #7f1d33; }
+.btn.danger { background: #5a3a42; border-color: #f0a8b0; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
@@ -216,11 +216,13 @@ a { color: inherit; }
 .banner {
   margin: 16px 0 20px;
   padding: 14px 16px;
-  background: #3f1d28;
-  border: 1px solid #7f1d33;
+  background: #4d3d40;
+  border: 1px solid #f0b4ba;
+  color: #fff1f2;
   border-radius: var(--radius);
   font-size: 16px;
 }
+.banner .muted { color: #f3d4d7; }
 .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .panel {
   background: var(--panel);
@@ -243,16 +245,16 @@ tr.row:hover { background: var(--hover); }
   border: 1px solid var(--line);
   border-radius: 999px;
 }
-.chip.BL_COMPARISON { color: #fecdd3; background: #3f1d28; border-color: #7f1d33; }
-.chip.SI_REQUEST { color: #bfdbfe; background: #1e3a5f; border-color: #1d4ed8; }
-.chip.INVOICE_QUERY { color: #fde68a; background: #3b2a12; border-color: #b45309; }
-.chip.GENERAL { color: #99f6e4; background: #134e4a; border-color: #0f766e; }
-.chip.SPAM { color: #e5e7eb; background: #2a2e33; }
-.chip.MISMATCH { color: #fecaca; }
-.chip.NEEDS_REVIEW { color: #fde68a; }
-.chip.OK { color: #bbf7d0; }
-.chip.human { color: #e9d5ff; background: #3b0764; border-color: #7e22ce; }
-.chip.program { color: #bae6fd; background: #0c4a6e; }
+.chip.BL_COMPARISON { color: #ffe4e8; background: #6a454c; border-color: #f0a8b0; }
+.chip.SI_REQUEST { color: #e4f0ff; background: #3d5270; border-color: #8eb8f0; }
+.chip.INVOICE_QUERY { color: #fff3cc; background: #5c4d32; border-color: #e8c56a; }
+.chip.GENERAL { color: #d9fff6; background: #355753; border-color: #6ed4c4; }
+.chip.SPAM { color: #e8eaed; background: #45494e; border-color: #9aa3ad; }
+.chip.MISMATCH { color: #ffd1d6; }
+.chip.NEEDS_REVIEW { color: #ffe7a3; }
+.chip.OK { color: #b8f3d4; }
+.chip.human { color: #f3e8ff; background: #4a3a62; border-color: #c4a0e8; }
+.chip.program { color: #d7f3ff; background: #2f4f62; border-color: #7ec8e8; }
 
 .toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
 .toolbar input, .toolbar select, select, .dark-select {
@@ -465,6 +467,19 @@ select option, .dark-select option {
 html[data-theme="light"] .recharts-default-tooltip { background: #fff !important; border-color: #cfd8df !important; }
 html[data-theme="light"] .recharts-tooltip-label,
 html[data-theme="light"] .recharts-tooltip-item { color: #152028 !important; }
+html[data-theme="light"] .banner {
+  background: #fff1f2;
+  border-color: #fda4af;
+  color: #4c0519;
+}
+html[data-theme="light"] .banner .muted { color: #9f1239; }
+html[data-theme="light"] .chip.BL_COMPARISON { color: #9f1239; background: #ffe4e6; border-color: #fda4af; }
+html[data-theme="light"] .chip.SI_REQUEST { color: #1e3a8a; background: #dbeafe; border-color: #93c5fd; }
+html[data-theme="light"] .chip.INVOICE_QUERY { color: #92400e; background: #fef3c7; border-color: #fcd34d; }
+html[data-theme="light"] .chip.GENERAL { color: #115e59; background: #ccfbf1; border-color: #5eead4; }
+html[data-theme="light"] .chip.SPAM { color: #334155; background: #e2e8f0; border-color: #94a3b8; }
+html[data-theme="light"] .chip.human { color: #6b21a8; background: #f3e8ff; border-color: #d8b4fe; }
+html[data-theme="light"] .chip.program { color: #075985; background: #e0f2fe; border-color: #7dd3fc; }
 
 @media (max-width: 820px) {
   .nav-scrim {
