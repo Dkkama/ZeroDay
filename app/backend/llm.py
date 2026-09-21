@@ -91,12 +91,44 @@ def classify_cursor(email: dict, attachments: list[dict]) -> dict:
     return apply_decision(email, attachments, rec)
 
 
+def _vertex_credentials():
+    try:
+        import google.auth
+        creds, _ = google.auth.default(
+            scopes=["https://www.googleapis.com/auth/cloud-platform"]
+        )
+        return creds
+    except Exception:
+        pass
+    import subprocess
+    from google.oauth2.credentials import Credentials
+
+    out = subprocess.run(
+        ["gcloud", "auth", "print-access-token"],
+        capture_output=True, text=True,
+    )
+    token = (out.stdout or "").strip()
+    if out.returncode != 0 or not token:
+        raise RuntimeError(
+            "Vertex needs Google credentials. Run "
+            "`gcloud auth application-default login` "
+            f"(gcloud said: {(out.stderr or 'no token').strip()[:180]})"
+        )
+    return Credentials(token=token)
+
+
 def classify_vertex(email: dict, attachments: list[dict]) -> dict:
     from google import genai
     from google.genai import types
 
     user = _user_prompt(email, attachments)
-    client = genai.Client(vertexai=True, project=GCP_PROJECT, location=VERTEX_LOCATION)
+    creds = _vertex_credentials()
+    client = genai.Client(
+        vertexai=True,
+        project=GCP_PROJECT,
+        location=VERTEX_LOCATION,
+        credentials=creds,
+    )
     response = client.models.generate_content(
         model=VERTEX_MODEL,
         contents=f"{system_prompt()}\n\n{user}",
