@@ -77,8 +77,8 @@ export default function Comparison() {
           <table>
             <thead>
               <tr>
-                <SortTh label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-                <SortTh label="File / subject" col="subject" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+                <SortTh className="col-num" label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+                <SortTh className="col-subject" label="File / subject" col="subject" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
                 <SortTh className="hide-sm" label="Date caught" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
                 <SortTh label="Reason" col="reason" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               </tr>
@@ -92,13 +92,14 @@ export default function Comparison() {
                 return "";
               }).map((r) => (
                 <tr key={r.email_id} className="row" {...rowOpen(() => open(r))}>
-                  <td>{emailNum(r.email_id)}</td>
-                  <td>{r.subject || r.email_id}</td>
+                  <td className="col-num">{emailNum(r.email_id)}</td>
+                  <td className="col-subject">{r.subject || r.email_id}</td>
                   <td className="hide-sm">{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
                   <td>
                     <span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span>
-                    {" "}
-                    {r.review_reason || (r.defect_fields || []).join(", ")}
+                    {r.review_reason || (r.defect_fields || []).length ? (
+                      <span className="chip-extra"> {r.review_reason || (r.defect_fields || []).join(", ")}</span>
+                    ) : null}
                   </td>
                 </tr>
               ))}

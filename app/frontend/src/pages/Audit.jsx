@@ -48,12 +48,12 @@ export default function Audit() {
         <table>
           <thead>
             <tr>
-              <SortTh className="hide-sm" label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-num" label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh label="Actor" col="actor" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh label="Document" col="document" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh label="Change" col="change" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh className="hide-sm" label="Category" col="category" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-chip" label="Actor" col="actor" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-subject" label="Document" col="document" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-subject" label="Change" col="change" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-chip" label="Category" col="category" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
             </tr>
           </thead>
           <tbody>
@@ -67,12 +67,12 @@ export default function Audit() {
               return "";
             }).map((r) => (
               <tr key={r.id}>
-                <td className="hide-sm">{r.id}</td>
-                <td>{(r.created_at || "").slice(0, 16).replace("T", " ")}</td>
-                <td><span className={`chip ${r.actor}`}>{r.actor}</span></td>
-                <td>{r.email_id}</td>
-                <td>{r.change_type}</td>
-                <td className="hide-sm"><span className={`chip ${r.category}`}>{r.category}</span></td>
+                <td className="col-num">{r.id}</td>
+                <td className="hide-sm">{(r.created_at || "").slice(0, 16).replace("T", " ")}</td>
+                <td className="col-chip"><span className={`chip ${r.actor}`}>{r.actor}</span></td>
+                <td className="col-subject">{r.email_id}</td>
+                <td className="col-subject">{r.change_type}</td>
+                <td className="col-chip"><span className={`chip ${r.category}`}>{r.category}</span></td>
               </tr>
             ))}
           </tbody>

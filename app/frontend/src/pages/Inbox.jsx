@@ -49,7 +49,7 @@ export default function Inbox() {
           <button className="btn" onClick={() => setExportOn(true)}>Export results</button>
         </div>
       </div>
-      <div className="toolbar">
+      <div className="toolbar mail-toolbar">
         <input placeholder="Search subject, id, sender" value={q}
                onChange={(e) => { setQ(e.target.value); setParams({ q: e.target.value, category, status }); }} />
         <select value={category} onChange={(e) => { setCategory(e.target.value); setParams({ q, category: e.target.value, status }); }}>
@@ -79,23 +79,28 @@ export default function Inbox() {
         <table>
           <thead>
             <tr>
-              <SortTh label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-num" label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="hide-sm" label="Id" col="id" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh label="Subject" col="subject" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-subject" label="Subject" col="subject" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="hide-sm" label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh className="hide-sm" label="Category" col="category" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh label="Status" col="status" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-chip hide-sm" label="Category" col="category" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-chip hide-sm" label="Status" col="status" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-meta show-sm" label="Type" col="status" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
             </tr>
           </thead>
           <tbody>
             {shown.map((r) => (
               <tr key={r.email_id} className="row" {...rowOpen(() => open(r))}>
-                <td>{emailNum(r.email_id)}</td>
+                <td className="col-num">{emailNum(r.email_id)}</td>
                 <td className="hide-sm">{r.email_id}</td>
-                <td>{r.subject}</td>
+                <td className="col-subject">{r.subject}</td>
                 <td className="hide-sm">{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
-                <td className="hide-sm"><span className={`chip ${r.category}`}>{r.category}</span></td>
-                <td><span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span></td>
+                <td className="col-chip hide-sm"><span className={`chip ${r.category}`}>{r.category}</span></td>
+                <td className="col-chip hide-sm"><span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span></td>
+                <td className="col-meta show-sm">
+                  <span className={`chip ${r.category}`}>{r.category}</span>
+                  <span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span>
+                </td>
               </tr>
             ))}
           </tbody>
