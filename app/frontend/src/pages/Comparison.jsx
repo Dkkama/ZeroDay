@@ -68,7 +68,7 @@ export default function Comparison() {
   if (!id) {
     return (
       <div>
-        <div className="header"><h1>Comparison requests</h1></div>
+        <div className="header"><h1>Review requests</h1></div>
         <p className="muted">Double-click a row. These are draft BLs the algorithm cannot close on its own.</p>
         {err && <div className="error">{err}</div>}
         <table>
@@ -101,7 +101,7 @@ export default function Comparison() {
   return (
     <div>
       <div className="header">
-        <h1>Comparison requests</h1>
+        <h1>Review requests</h1>
         <button className="btn" onClick={() => { setParams({}); setDoc(null); }}>Back to list</button>
         <button className="btn" onClick={() => go(-1)} disabled={idx() <= 0}>Previous</button>
         <button className="btn" onClick={() => go(1)} disabled={idx() >= queue.length - 1}>Next</button>

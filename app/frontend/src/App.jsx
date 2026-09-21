@@ -15,7 +15,7 @@ import {
 const NAV = [
   { to: "/", label: "Dashboard", Icon: IconDashboard },
   { to: "/inbox", label: "Inbox", Icon: IconInbox },
-  { to: "/comparison", label: "Comparison requests", Icon: IconCompare },
+  { to: "/comparison", label: "Review requests", Icon: IconCompare },
   { to: "/audit", label: "Audit log", Icon: IconAudit },
 ];
 
