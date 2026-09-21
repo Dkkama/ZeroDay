@@ -138,6 +138,7 @@ a { color: inherit; }
 .sidebar-show { margin-bottom: 16px; }
 .sidebar.is-hidden {
   width: 0;
+  min-width: 0;
   padding: 0;
   border: 0;
   overflow: hidden;
@@ -453,16 +454,22 @@ html[data-theme="light"] .recharts-tooltip-item { color: #152028 !important; }
     inset: 0 auto 0 0;
     width: min(280px, 86vw);
     z-index: 16;
-    transform: translateX(0);
+    transform: translateX(-105%);
     transition: transform 0.2s ease;
+    min-width: 0;
   }
-  .sidebar.is-hidden {
+  .shell:not(.nav-hidden) .sidebar {
+    transform: translateX(0);
+    pointer-events: auto;
     width: min(280px, 86vw);
     padding: 18px 12px;
     border-right: 1px solid var(--line);
     overflow: auto;
-    pointer-events: none;
+  }
+  .sidebar.is-hidden {
     transform: translateX(-105%);
+    width: min(280px, 86vw);
+    padding: 18px 12px;
   }
   .page { padding: 16px 14px 36px; }
   .header { flex-wrap: wrap; }
