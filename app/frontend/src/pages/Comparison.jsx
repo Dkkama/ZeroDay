@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import FilePreview from "./FilePreview.jsx";
 import { statusClass, statusLabel } from "../status";
-import { SortTh, emailNum, nextSort, sortRows } from "../sort";
+import { SortTh, emailNum, nextSort, sortRows } from "../sort.jsx";
 
 const LABELS = {
   shipper: "Shipper",

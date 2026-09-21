@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import ExportDialog from "./ExportDialog.jsx";
 import { statusClass, statusLabel } from "../status";
-import { SortTh, emailNum, nextSort, sortRows } from "../sort";
+import { SortTh, emailNum, nextSort, sortRows } from "../sort.jsx";
 
 export default function Inbox() {
   const nav = useNavigate();

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, download } from "../api";
 import { auditRowsToPdf } from "../pdf.js";
-import { SortTh, nextSort, sortRows } from "../sort";
+import { SortTh, nextSort, sortRows } from "../sort.jsx";
 
 export default function Audit() {
   const [rows, setRows] = useState([]);
