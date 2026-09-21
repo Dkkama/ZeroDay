@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, download } from "../api";
+import { auditRowsToPdf } from "../pdf.js";
 
 export default function Audit() {
   const [rows, setRows] = useState([]);
@@ -14,7 +15,18 @@ export default function Audit() {
 
   async function exp() {
     try {
-      await download("audit", { fmt, limit }, `audit.${fmt}`);
+      if (fmt === "pdf") {
+        const data = await api.audit(limit);
+        const bytes = auditRowsToPdf(data);
+        const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "audit.pdf";
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        await download("audit", { fmt, limit }, `audit.${fmt}`);
+      }
       setExportOn(false);
     } catch (e) {
       setErr(e.message);
