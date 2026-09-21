@@ -309,34 +309,39 @@ tr.row:hover { background: var(--hover); }
   border-radius: var(--radius);
   padding: 8px 10px;
 }
+.select-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.select-wrap::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -5px;
+  border-right: 2px solid var(--text);
+  border-bottom: 2px solid var(--text);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.toolbar .select-wrap { flex: 0 0 auto; }
+.modal .select-wrap { display: block; width: 100%; }
 .toolbar select, select, .dark-select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
   padding: 8px 32px 8px 10px;
   background-color: var(--bg);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23eef3f6' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 12px 12px;
+  background-image: none;
 }
-html[data-theme="light"] .toolbar select,
-html[data-theme="light"] select,
-html[data-theme="light"] .dark-select {
+.modal select, .modal .dark-select {
+  width: 100%;
   background-color: var(--bg);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23152028' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 12px 12px;
-}
-html[data-theme="hc"] .toolbar select,
-html[data-theme="hc"] select,
-html[data-theme="hc"] .dark-select {
-  background-color: var(--bg);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 12px 12px;
+  background-image: none;
 }
 select option, .dark-select option {
   background: var(--bg-2);
@@ -519,7 +524,7 @@ select option, .dark-select option {
 }
 .modal select, .modal .dark-select {
   width: 100%;
-  background: var(--bg);
+  background-color: var(--bg);
   color: var(--text);
 }
 .checks label { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
@@ -664,7 +669,7 @@ html[data-theme="light"] .chip.OK { color: #14532d; background: #dcfce7; border-
   .banner { font-size: 13px; padding: 10px 12px; }
   .toolbar { flex-direction: column; flex-wrap: wrap; align-items: stretch; }
   .mail-toolbar { flex-wrap: wrap; }
-  .toolbar input, .toolbar select, .mail-toolbar input { width: 100%; min-width: 0; flex: 1 1 auto; }
+  .toolbar input, .toolbar select, .mail-toolbar input, .toolbar .select-wrap { width: 100%; min-width: 0; flex: 1 1 auto; }
   .btn-row .btn { flex: 1 1 auto; }
   .choices button { text-align: left; overflow-wrap: anywhere; }
   .chip { font-size: 11px; padding: 2px 6px; max-width: none; overflow-wrap: normal; }

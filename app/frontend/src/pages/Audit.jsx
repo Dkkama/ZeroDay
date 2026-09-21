@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, download } from "../api";
 import { auditRowsToPdf } from "../pdf.js";
+import Select from "../Select.jsx";
 import { SortTh, nextSort, sortRows } from "../sort.jsx";
 
 function AuditWhen({ value }) {
@@ -95,20 +96,20 @@ export default function Audit() {
             <h3>Export the report</h3>
             <p className="muted">Choose how many log rows to include and the file type.</p>
             <label className="muted">How many logs</label>
-            <select className="dark-select" value={limit} onChange={(e) => setLimit(e.target.value)}>
+            <Select className="dark-select" value={limit} onChange={(e) => setLimit(e.target.value)}>
               <option value="50">Last 50</option>
               <option value="200">Last 200</option>
               <option value="500">Last 500</option>
-            </select>
+            </Select>
             <div style={{ height: 12 }} />
             <label className="muted">Format</label>
-            <select className="dark-select" value={fmt} onChange={(e) => setFmt(e.target.value)}>
+            <Select className="dark-select" value={fmt} onChange={(e) => setFmt(e.target.value)}>
               <option value="csv">CSV</option>
               <option value="json">JSON</option>
               <option value="xlsx">XLSX</option>
               <option value="pdf">PDF</option>
               <option value="txt">TXT</option>
-            </select>
+            </Select>
             <div style={{ height: 16 }} />
             <button className="btn primary" onClick={exp}>Download</button>
             {" "}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { download } from "../api";
+import Select from "../Select.jsx";
 
 const STATUS = [
   { id: "OK", label: "Succeeded / no mismatch" },
@@ -72,17 +73,17 @@ export default function ExportDialog({ onClose }) {
           ))}
         </div>
         <label className="muted">Human-validated</label>
-        <select className="dark-select" value={validated} onChange={(e) => setValidated(e.target.value)}>
+        <Select className="dark-select" value={validated} onChange={(e) => setValidated(e.target.value)}>
           <option value="">Any</option>
           <option value="yes">Only validated</option>
           <option value="no">Not yet validated</option>
-        </select>
+        </Select>
         <div style={{ height: 10 }} />
-        <select className="dark-select" value={fmt} onChange={(e) => setFmt(e.target.value)}>
+        <Select className="dark-select" value={fmt} onChange={(e) => setFmt(e.target.value)}>
           <option value="csv">CSV</option>
           <option value="json">JSON</option>
           <option value="xlsx">XLSX</option>
-        </select>
+        </Select>
         <div style={{ height: 14 }} />
         <button className="btn primary" onClick={() => go(null)}>Export selection</button>
         {" "}

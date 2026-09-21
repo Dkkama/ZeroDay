@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import ExportDialog from "./ExportDialog.jsx";
 import { statusClass, statusLabel } from "../status";
+import Select from "../Select.jsx";
 import { SortTh, emailNum, nextSort, rowOpen, sortRows } from "../sort.jsx";
 
 export default function Inbox() {
@@ -52,20 +53,20 @@ export default function Inbox() {
       <div className="toolbar mail-toolbar">
         <input placeholder="Search subject, id, sender" value={q}
                onChange={(e) => { setQ(e.target.value); setParams({ q: e.target.value, category, status }); }} />
-        <select value={category} onChange={(e) => { setCategory(e.target.value); setParams({ q, category: e.target.value, status }); }}>
+        <Select value={category} onChange={(e) => { setCategory(e.target.value); setParams({ q, category: e.target.value, status }); }}>
           <option value="">All categories</option>
           <option value="BL_COMPARISON">Check documents</option>
           <option value="SI_REQUEST">New SI</option>
           <option value="INVOICE_QUERY">Invoice</option>
           <option value="GENERAL">Operational</option>
           <option value="SPAM">Spam</option>
-        </select>
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setParams({ q, category, status: e.target.value }); }}>
+        </Select>
+        <Select value={status} onChange={(e) => { setStatus(e.target.value); setParams({ q, category, status: e.target.value }); }}>
           <option value="">All statuses</option>
           <option value="OK">OK</option>
           <option value="MISMATCH">Mismatch</option>
           <option value="NEEDS_REVIEW">Needs review</option>
-        </select>
+        </Select>
       </div>
       {err && <div className="error">{err}</div>}
       {openRow && openRow.category !== "BL_COMPARISON" && (
