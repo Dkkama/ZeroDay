@@ -121,31 +121,46 @@ a { color: inherit; }
   display: flex;
   flex-direction: column;
   padding: 18px 12px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: width 0.28s ease, padding 0.28s ease;
 }
-.brand { padding: 8px 10px 24px; }
+.sidebar.is-collapsed { width: 72px; padding: 14px 8px; }
+.brand { padding: 4px 6px 18px; }
 .brand b { display: block; font-size: 32px; letter-spacing: 0.04em; }
-.brand span { color: var(--muted); font-size: 15px; display: block; margin-bottom: 10px; }
-.sidebar-hide, .sidebar-show {
+.brand span { color: var(--muted); font-size: 15px; display: block; margin-top: 4px; }
+.sidebar-burger {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 10px;
   background: var(--btn);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 6px 10px;
   cursor: pointer;
   color: var(--text);
-  font-size: 14px;
 }
-.sidebar-show { margin-bottom: 16px; }
-.sidebar.is-hidden {
-  width: 0;
-  min-width: 0;
-  padding: 0;
-  border: 0;
+.nav-ico { display: block; flex-shrink: 0; }
+.nav-label {
   overflow: hidden;
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.18s ease;
+}
+.sidebar.is-collapsed .brand-full,
+.sidebar.is-collapsed .nav-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
   pointer-events: none;
 }
 .nav a, .nav button.navlink {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   width: 100%;
   text-align: left;
   text-decoration: none;
@@ -157,6 +172,11 @@ a { color: inherit; }
   color: var(--muted);
   cursor: pointer;
   font-size: 17px;
+}
+.sidebar.is-collapsed .nav a,
+.sidebar.is-collapsed .nav button.navlink {
+  justify-content: center;
+  padding: 12px 8px;
 }
 .nav a.active, .nav a:hover, .nav button.navlink:hover {
   background: var(--hover);
@@ -418,7 +438,14 @@ select option, .dark-select option {
   color: var(--text);
   cursor: pointer;
 }
-.a11y-btn { padding: 10px 14px; font-size: 15px; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+.a11y-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 15px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+}
 .a11y-btn.on, .a11y-panel button.on { border-color: #38bdf8; background: #164e63; color: #e8eef2; }
 .a11y-panel {
   position: absolute;
@@ -450,26 +477,21 @@ html[data-theme="light"] .recharts-tooltip-item { color: #152028 !important; }
     cursor: pointer;
   }
   .sidebar {
-    position: fixed;
-    inset: 0 auto 0 0;
-    width: min(280px, 86vw);
+    position: relative;
     z-index: 16;
-    transform: translateX(-105%);
-    transition: transform 0.2s ease;
-    min-width: 0;
+    width: 72px;
+    padding: 14px 8px;
+    transform: none;
   }
   .shell:not(.nav-hidden) .sidebar {
-    transform: translateX(0);
-    pointer-events: auto;
+    position: relative;
     width: min(280px, 86vw);
     padding: 18px 12px;
-    border-right: 1px solid var(--line);
-    overflow: auto;
+    transform: none;
   }
-  .sidebar.is-hidden {
-    transform: translateX(-105%);
-    width: min(280px, 86vw);
-    padding: 18px 12px;
+  .sidebar.is-collapsed {
+    width: 72px;
+    padding: 14px 8px;
   }
   .page { padding: 16px 14px 36px; }
   .header { flex-wrap: wrap; }

@@ -8,12 +8,15 @@ import Comparison from "./pages/Comparison.jsx";
 import Audit from "./pages/Audit.jsx";
 import Settings from "./pages/Settings.jsx";
 import A11yControl from "./A11yControl.jsx";
+import {
+  IconAudit, IconBurger, IconCompare, IconDashboard, IconInbox, IconSettings, IconSignOut,
+} from "./navIcons.jsx";
 
 const NAV = [
-  { to: "/", label: "Dashboard" },
-  { to: "/inbox", label: "Inbox" },
-  { to: "/comparison", label: "Comparison requests" },
-  { to: "/audit", label: "Audit log" },
+  { to: "/", label: "Dashboard", Icon: IconDashboard },
+  { to: "/inbox", label: "Inbox", Icon: IconInbox },
+  { to: "/comparison", label: "Comparison requests", Icon: IconCompare },
+  { to: "/audit", label: "Audit log", Icon: IconAudit },
 ];
 
 function isMobileNav() {
@@ -23,29 +26,37 @@ function isMobileNav() {
 function Sidebar({ open, onToggle, onGo }) {
   const loc = useLocation();
   return (
-    <aside className={`sidebar${open ? "" : " is-hidden"}`} aria-hidden={!open}>
+    <aside className={`sidebar${open ? "" : " is-collapsed"}`} aria-expanded={open}>
       <div className="brand">
-        <b>ZERODAY</b>
-        <span>Shipping document desk</span>
-        <button className="sidebar-hide" type="button" onClick={onToggle} aria-label="Hide sidebar">
-          Hide
+        <button className="sidebar-burger" type="button" onClick={onToggle}
+                aria-label={open ? "Collapse sidebar" : "Expand sidebar"} title={open ? "Collapse" : "Expand"}>
+          <IconBurger />
         </button>
+        <div className="brand-full">
+          <b>ZERODAY</b>
+          <span>Shipping document desk</span>
+        </div>
       </div>
       <nav className="nav">
         {NAV.map((item) => (
           <a key={item.to} href={item.to} className={loc.pathname === item.to ? "active" : ""}
+             title={item.label} aria-label={item.label}
              onClick={(e) => { e.preventDefault(); onGo(item.to); }}>
-            {item.label}
+            <item.Icon />
+            <span className="nav-label">{item.label}</span>
           </a>
         ))}
       </nav>
       <div className="nav-foot nav">
         <a href="/settings" className={loc.pathname === "/settings" ? "active" : ""}
+           title="Settings" aria-label="Settings"
            onClick={(e) => { e.preventDefault(); onGo("/settings"); }}>
-          Settings
+          <IconSettings />
+          <span className="nav-label">Settings</span>
         </a>
-        <button className="navlink" onClick={() => onGo("/login", true)}>
-          Sign out
+        <button className="navlink" title="Sign out" aria-label="Sign out" onClick={() => onGo("/login", true)}>
+          <IconSignOut />
+          <span className="nav-label">Sign out</span>
         </button>
       </div>
     </aside>
@@ -77,14 +88,7 @@ function Guard({ children }) {
     <div className={`shell${navOpen ? "" : " nav-hidden"}`}>
       {navOpen && <button className="nav-scrim" type="button" aria-label="Close menu" onClick={toggleNav} />}
       <Sidebar open={navOpen} onToggle={toggleNav} onGo={go} />
-      <main className="page">
-        {!navOpen && (
-          <button className="sidebar-show" type="button" onClick={toggleNav} aria-label="Show sidebar">
-            Menu
-          </button>
-        )}
-        {children}
-      </main>
+      <main className="page">{children}</main>
     </div>
   );
 }

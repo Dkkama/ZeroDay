@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { IconA11y } from "./navIcons.jsx";
 
 const THEMES = [
   { id: "dark", label: "Dark" },
@@ -35,6 +36,7 @@ export default function A11yControl() {
         aria-controls="a11y-panel"
         onClick={() => setOpen((v) => !v)}
       >
+        <IconA11y />
         Accessibility
       </button>
       {open && (
