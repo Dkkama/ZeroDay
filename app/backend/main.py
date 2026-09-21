@@ -14,6 +14,7 @@ from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import BaseModel
 
 from config import (
@@ -835,6 +836,18 @@ def startup():
     _resume_running_jobs()
 
 
+class SPAStaticFiles(StaticFiles):
+    """Client routes such as /login have no file. Reload should get the app."""
+
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except StarletteHTTPException as exc:
+            if exc.status_code != 404 or Path(path).suffix or path.startswith("api"):
+                raise
+            return await super().get_response("index.html", scope)
+
+
 FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 if FRONTEND_DIST.exists():
-    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="ui")
+    app.mount("/", SPAStaticFiles(directory=FRONTEND_DIST, html=True), name="ui")
