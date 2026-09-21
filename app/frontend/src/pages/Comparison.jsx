@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import FilePreview from "./FilePreview.jsx";
@@ -11,9 +11,24 @@ export default function Comparison() {
   const [queue, setQueue] = useState([]);
   const [doc, setDoc] = useState(null);
   const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({});
   const [err, setErr] = useState("");
   const [sort, setSort] = useState({ key: "num", dir: "desc" });
+  const writes = useRef(Promise.resolve());
+  const pending = useRef({});
+  const saveTimer = useRef(null);
   const id = params.get("id");
+
+  function later(task) {
+    writes.current = writes.current.then(task).catch((e) => setErr(e.message));
+  }
+
+  function flushNow(emailId) {
+    clearTimeout(saveTimer.current);
+    const edits = Object.entries(pending.current).map(([name, value]) => ({ name, source: "custom", value }));
+    pending.current = {};
+    if (edits.length) later(() => api.editFields(emailId, edits));
+  }
 
   async function loadList() {
     const rows = await api.emails({ queue: "true" });
@@ -28,12 +43,15 @@ export default function Comparison() {
   useEffect(() => {
     if (!id) { setDoc(null); return; }
     setDoc(null);
+    setDraft({});
     api.email(id).then(setDoc).catch((e) => setErr(e.message));
   }, [id]);
 
   function open(row) {
+    if (id && id !== row.email_id) flushNow(id);
     setParams({ id: row.email_id });
     setEditing(false);
+    setDraft({});
   }
 
   function idx() {
@@ -45,17 +63,42 @@ export default function Comparison() {
     if (i >= 0 && i < queue.length) open(queue[i]);
   }
 
-  async function validate() {
-    await api.validate(id);
-    const rows = await loadList();
-    const next = rows.find((r) => r.email_id !== id);
-    if (next) open(next);
-    else { setParams({}); setDoc(null); }
+  function pick(field, source, value) {
+    const current = (doc?.field_view || []).find((f) => f.name === field);
+    let resolved = value ?? "";
+    if (source === "si") resolved = current?.si || "";
+    if (source === "bl") resolved = current?.bl || "";
+    setDraft((prev) => ({ ...prev, [field]: resolved }));
+    const emailId = id;
+    if (source === "custom") {
+      pending.current[field] = resolved;
+      clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => flushNow(emailId), 300);
+      return;
+    }
+    flushNow(emailId);
+    later(() => api.editFields(emailId, [{ name: field, source: "custom", value: resolved }]));
   }
 
-  async function pick(field, source, value) {
-    await api.editFields(id, [{ name: field, source, value }]);
-    setDoc(await api.email(id));
+  function finishEdit() {
+    if (!editing) {
+      setEditing(true);
+      return;
+    }
+    flushNow(id);
+    setEditing(false);
+  }
+
+  function validate() {
+    const leaving = id;
+    flushNow(leaving);
+    setQueue((rows) => rows.map((r) => (
+      r.email_id === leaving ? { ...r, fixed: true, human_validated: true } : r
+    )));
+    const next = queue.find((r) => r.email_id !== leaving && !r.fixed && !r.human_validated);
+    if (next) open(next);
+    else { setParams({}); setDoc(null); }
+    later(() => api.validate(leaving));
   }
 
   if (!id) {
@@ -101,7 +144,21 @@ export default function Comparison() {
     );
   }
 
-  if (!doc || doc.email_id !== id) return <p className="muted">Opening {id}…</p>;
+  if (!doc || doc.email_id !== id) {
+    const hint = queue.find((r) => r.email_id === id);
+    return (
+      <div>
+        <div className="header">
+          <h1>Review requests</h1>
+          <div className="header-actions">
+            <button className="btn" onClick={() => { setParams({}); setDoc(null); }}>Back to list</button>
+          </div>
+        </div>
+        <p className="muted">{id}{hint?.subject ? ` · ${hint.subject}` : ""}</p>
+        <p className="muted">Opening…</p>
+      </div>
+    );
+  }
   const si = (doc.attachments || []).find((a) => a.kind === "si");
   const bl = (doc.attachments || []).find((a) => a.kind === "bl");
   const needles = mismatchNeedles(doc.si_fields, doc.bl_fields);
@@ -114,16 +171,22 @@ export default function Comparison() {
           <button className="btn" onClick={() => { setParams({}); setDoc(null); }}>Back to list</button>
           <button className="btn" onClick={() => go(-1)} disabled={idx() <= 0}>Previous</button>
           <button className="btn" onClick={() => go(1)} disabled={idx() >= queue.length - 1}>Next</button>
-          <button className="btn" onClick={() => setEditing((v) => !v)}>{editing ? "Done" : "Edit"}</button>
+          <button className="btn" onClick={finishEdit}>{editing ? "Done" : "Edit"}</button>
           <button className="btn primary" onClick={validate}>Validate</button>
         </div>
       </div>
       <p className="muted">{doc.email_id} · {doc.subject} · {statusLabel(doc)} · {doc.review_reason || (doc.defect_fields || []).join(", ")}</p>
 
       <div className="fields" key={doc.email_id}>
-        {(doc.field_view || []).map((f) => {
+        {(doc.field_view || []).map((raw) => {
+          const chosen = Object.prototype.hasOwnProperty.call(draft, raw.name) ? draft[raw.name] : null;
+          const f = chosen === null ? raw : {
+            ...raw,
+            value: chosen,
+            source: chosen === raw.si ? "si" : chosen === raw.bl ? "bl" : "custom",
+          };
           const differs = valuesDiffer(f.si, f.bl);
-          const decided = String((doc.resolved_fields || {})[f.name] || "").trim().length > 0;
+          const decided = String(chosen ?? (doc.resolved_fields || {})[raw.name] ?? "").trim().length > 0;
           const tone = differs ? (decided ? " decided" : " mismatch") : "";
           return (
           <div className={`field-box${tone}`} key={`${doc.email_id}-${f.name}`}>
@@ -131,10 +194,10 @@ export default function Comparison() {
             {f.empty ? (
               <input
                 placeholder="AI could not read this field — double-click to type"
-                defaultValue={f.value}
+                value={f.value || ""}
+                onChange={(e) => pick(f.name, "custom", e.target.value)}
                 onDoubleClick={(e) => e.currentTarget.removeAttribute("readonly")}
                 readOnly={!editing}
-                onBlur={(e) => pick(f.name, "custom", e.target.value)}
               />
             ) : (
               <>
@@ -149,10 +212,10 @@ export default function Comparison() {
                   )}
                 </div>
                 <input
-                  defaultValue={f.value}
+                  value={f.value || ""}
                   readOnly={!editing}
+                  onChange={(e) => pick(f.name, "custom", e.target.value)}
                   onDoubleClick={(e) => { e.currentTarget.readOnly = false; }}
-                  onBlur={(e) => pick(f.name, "custom", e.target.value)}
                 />
               </>
             )}

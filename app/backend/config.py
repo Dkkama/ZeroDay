@@ -20,11 +20,12 @@ DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "clerk123")
 SESSION_SECRET = os.environ.get("SESSION_SECRET", "zeroday-dev-secret")
 
 GCP_PROJECT = os.environ.get("GCP_PROJECT", "hackathon-2026-509207")
+STORE_BACKEND = os.environ.get("STORE_BACKEND", "json").strip().lower()
 VERTEX_LOCATION = os.environ.get("VERTEX_LOCATION", "global")
 VERTEX_MODEL = os.environ.get("VERTEX_MODEL", "gemini-3-flash-preview")
 CURSOR_MODEL = os.environ.get("CURSOR_MODEL", "gemini-3-flash")
 
-VERTEX_MAX_BATCH = int(os.environ.get("VERTEX_MAX_BATCH", "3"))
+VERTEX_MAX_BATCH = int(os.environ.get("VERTEX_MAX_BATCH", "2048"))
 CRON_SECRET = os.environ.get("CRON_SECRET", "")
 
 COMPARE_FIELDS = [

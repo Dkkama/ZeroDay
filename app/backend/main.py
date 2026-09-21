@@ -40,7 +40,7 @@ from exports import (
     to_xlsx,
 )
 from ingest import _find_inbox_root, fetch_imap, ingest_zip
-from llm import apply_decision, classify, classify_cursor_inbox, guard_vertex_batch
+from llm import apply_decision, classify, classify_cursor_inbox, classify_vertex_batch, guard_vertex_batch
 from seed import (
     build_record,
     load_attachment,
@@ -49,9 +49,10 @@ from seed import (
     next_live_id,
     seed_sample,
 )
-from store import Store, public_email
+from firestore_store import open_store
+from store import public_email
 
-store = Store()
+store = open_store()
 app = FastAPI(title="ZeroDay SDOC", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
@@ -585,20 +586,15 @@ def _run_ingest(job_id: int, root, emails, source, provider, resume: bool = Fals
             store.upsert_email(rec, actor="program")
         return
     from seed import build_record
-    for email in emails:
-        try:
-            rec = build_record(email, {}, root, source=source)
-            decision = classify(provider, email, rec["attachments"])
-            rec.update(decision)
-            rec["processed_live"] = True
-            store.upsert_email(rec, actor="program")
-            done += 1
-        except Exception as exc:
-            failed += 1
-            rec = build_record(email, {}, root, source=source)
-            store.upsert_email(rec, actor="program")
-            store.update_job(job_id, error=str(exc))
-        store.update_job(job_id, done=done, failed=failed)
+    group = []
+    built = [build_record(email, {}, root, source=source) for email in emails]
+    for rec in built:
+        group.append(rec)
+        if len(group) == 8:
+            done, failed = _flush_vertex_batch(job_id, group, done, failed, store_failures=True)
+            group = []
+    if group:
+        done, failed = _flush_vertex_batch(job_id, group, done, failed, store_failures=True)
     store.update_job(job_id, status="done" if not failed else "failed", done=done, failed=failed)
 
 
@@ -675,6 +671,9 @@ def _latest_inbox_root():
 
 def _run_process(job_id: int, ids: list[str], provider: str):
     store.update_job(job_id, status="running")
+    if provider == "vertex" and len(ids) > 1:
+        _run_process_vertex_batches(job_id, ids)
+        return
     done = failed = 0
     for eid in ids:
         rec = store.get_email(eid)
@@ -690,6 +689,7 @@ def _run_process(job_id: int, ids: list[str], provider: str):
             decision = classify(provider, rec, rec.get("attachments") or [])
             rec.update(decision)
             rec["processed_live"] = True
+            rec["classified_by"] = provider
             store.upsert_email(rec, actor="program",
                                change_type=f'reclassified with {provider}')
             done += 1
@@ -698,6 +698,118 @@ def _run_process(job_id: int, ids: list[str], provider: str):
             store.update_job(job_id, error=str(exc))
         store.update_job(job_id, done=done, failed=failed)
     store.update_job(job_id, status="done" if not failed else "failed", done=done, failed=failed)
+
+
+def _classify_vertex_chunk(recs: list[dict]) -> tuple[dict, str | None]:
+    last = None
+    for attempt in range(6):
+        try:
+            return classify_vertex_batch(recs), None
+        except Exception as exc:
+            last = exc
+            msg = str(exc)
+            if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
+                time.sleep(min(60, 2 ** attempt))
+                continue
+            if attempt == 0:
+                time.sleep(1)
+                continue
+            break
+    return {}, str(last)[:300] if last else "vertex batch failed"
+
+
+def _save_vertex_batch(group: list[dict], store_failures: bool = False) -> tuple[int, int, str | None]:
+    parsed, err = _classify_vertex_chunk(group)
+    missing = [rec for rec in group if rec["email_id"] not in parsed]
+    if missing and parsed:
+        again, err2 = _classify_vertex_chunk(missing)
+        parsed.update(again)
+        err = err2 or err
+    saved = missed = 0
+    for rec in group:
+        decision = parsed.get(rec["email_id"])
+        if not decision:
+            missed += 1
+            if store_failures:
+                store.upsert_email(rec, actor="program")
+            continue
+        rec.update(decision)
+        rec["processed_live"] = True
+        rec["classified_by"] = "vertex"
+        store.upsert_email(rec, actor="program", change_type="reclassified with vertex")
+        saved += 1
+    return saved, missed, err
+
+
+def _flush_vertex_batch(job_id: int, group: list[dict], done: int, failed: int,
+                        store_failures: bool = False) -> tuple[int, int]:
+    saved, missed, err = _save_vertex_batch(group, store_failures=store_failures)
+    done += saved
+    failed += missed
+    if err and missed:
+        store.update_job(job_id, done=done, failed=failed, error=err)
+    else:
+        store.update_job(job_id, done=done, failed=failed, error=None)
+    return done, failed
+
+
+def _run_process_vertex_batches(job_id: int, ids: list[str]):
+    """Three workers, eight emails per prompt, five prompts a minute. Same pool as Cursor."""
+    import queue
+    import sys
+    from config import ROOT
+    sys.path.insert(0, str(ROOT / "sdoc_eval"))
+    from run import RateLimiter  # noqa: E402
+
+    limiter = RateLimiter([(5, 60.0), (280, 3600.0)])
+    work = queue.Queue()
+    for eid in ids:
+        work.put(eid)
+    lock = threading.Lock()
+    state = {"done": 0, "failed": 0}
+    workers = 3 if len(ids) > 8 else 1
+
+    def worker():
+        while True:
+            group = []
+            missing = 0
+            for _ in range(8):
+                try:
+                    eid = work.get_nowait()
+                except queue.Empty:
+                    break
+                rec = store.get_email(eid)
+                if rec:
+                    group.append(rec)
+                else:
+                    missing += 1
+            if missing:
+                with lock:
+                    state["failed"] += missing
+                    store.update_job(job_id, done=state["done"], failed=state["failed"])
+            if not group:
+                return
+            limiter.wait()
+            saved, missed, err = _save_vertex_batch(group)
+            with lock:
+                state["done"] += saved
+                state["failed"] += missed
+                if err and missed:
+                    store.update_job(job_id, done=state["done"], failed=state["failed"], error=err)
+                else:
+                    store.update_job(job_id, done=state["done"], failed=state["failed"], error=None)
+
+    threads = [threading.Thread(target=worker, name=f"vertex-w{i}") for i in range(workers)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    store.update_job(
+        job_id,
+        status="done" if not state["failed"] else "failed",
+        done=state["done"],
+        failed=state["failed"],
+    )
 
 
 def _imap_poll_loop():

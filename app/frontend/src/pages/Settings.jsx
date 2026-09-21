@@ -42,8 +42,14 @@ export default function Settings() {
     }
   }
 
-  async function saveProvider(llm_provider) {
-    await run(`Using ${llm_provider}.`, () => api.saveSettings({ llm_provider }));
+  function saveProvider(llm_provider) {
+    setSettings((current) => ({ ...(current || {}), llm_provider }));
+    setErr("");
+    setMsg(`Using ${llm_provider}.`);
+    api.saveSettings({ llm_provider }).catch((e) => {
+      setErr(e.message || String(e));
+      setMsg("");
+    });
   }
 
   async function uploadZip(file) {
@@ -72,7 +78,7 @@ export default function Settings() {
 
       <div className="panel" style={{ marginBottom: 16 }}>
         <h3>Model</h3>
-        <p className="muted">Cursor handles a full inbox. Vertex is for a few live calls and will refuse a large zip.</p>
+        <p className="muted">Cursor and Vertex both run three workers, eight emails per prompt, and at most five prompts a minute.</p>
         <div className="btn-row">
           <button className={`btn ${settings?.llm_provider === "cursor" ? "primary" : ""}`}
                   onClick={() => saveProvider("cursor")}>Test — Cursor</button>

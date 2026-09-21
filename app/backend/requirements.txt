@@ -4,6 +4,7 @@ python-dotenv
 python-multipart
 pydantic
 google-genai
+google-cloud-firestore
 pypdf
 python-docx
 openpyxl

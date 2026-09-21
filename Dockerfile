@@ -8,7 +8,7 @@ RUN npm run build
 FROM python:3.11-slim
 WORKDIR /app
 RUN pip install --no-cache-dir \
-    fastapi uvicorn python-dotenv python-multipart pydantic google-genai \
+    fastapi uvicorn python-dotenv python-multipart pydantic google-genai google-cloud-firestore \
     pypdf python-docx openpyxl pypdfium2 pillow
 COPY app/backend /app/app/backend
 COPY sdoc_eval /app/sdoc_eval

@@ -4,6 +4,7 @@ import json
 import os
 import re
 import sys
+import threading
 from pathlib import Path
 
 from config import (
@@ -182,53 +183,89 @@ def classify_cursor(email: dict, attachments: list[dict]) -> dict:
     return apply_decision(email, attachments, rec)
 
 
+_vertex_creds = None
+_vertex_creds_lock = threading.Lock()
+
+
 def _vertex_credentials():
-    try:
-        import google.auth
-        creds, _ = google.auth.default(
-            scopes=["https://www.googleapis.com/auth/cloud-platform"]
+    global _vertex_creds
+    with _vertex_creds_lock:
+        if _vertex_creds is not None:
+            return _vertex_creds
+        try:
+            import google.auth
+            creds, _ = google.auth.default(
+                scopes=["https://www.googleapis.com/auth/cloud-platform"]
+            )
+            _vertex_creds = creds
+            return _vertex_creds
+        except Exception:
+            pass
+        import subprocess
+        from google.oauth2.credentials import Credentials
+
+        out = subprocess.run(
+            ["gcloud", "auth", "print-access-token"],
+            capture_output=True, text=True,
         )
-        return creds
-    except Exception:
-        pass
-    import subprocess
-    from google.oauth2.credentials import Credentials
-
-    out = subprocess.run(
-        ["gcloud", "auth", "print-access-token"],
-        capture_output=True, text=True,
-    )
-    token = (out.stdout or "").strip()
-    if out.returncode != 0 or not token:
-        raise RuntimeError(
-            "Vertex needs Google credentials. Run "
-            "`gcloud auth application-default login` "
-            f"(gcloud said: {(out.stderr or 'no token').strip()[:180]})"
-        )
-    return Credentials(token=token)
+        token = (out.stdout or "").strip()
+        if out.returncode != 0 or not token:
+            raise RuntimeError(
+                "Vertex needs Google credentials. Run "
+                "`gcloud auth application-default login` "
+                f"(gcloud said: {(out.stderr or 'no token').strip()[:180]})"
+            )
+        _vertex_creds = Credentials(token=token)
+        return _vertex_creds
 
 
-def classify_vertex(email: dict, attachments: list[dict]) -> dict:
+def _vertex_generate(contents: str) -> str:
     from google import genai
     from google.genai import types
 
-    user = _user_prompt(email, attachments)
-    creds = _vertex_credentials()
     client = genai.Client(
         vertexai=True,
         project=GCP_PROJECT,
         location=VERTEX_LOCATION,
-        credentials=creds,
+        credentials=_vertex_credentials(),
     )
     response = client.models.generate_content(
         model=VERTEX_MODEL,
-        contents=f"{system_prompt()}\n\n{user}",
+        contents=contents,
         config=types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(thinking_level="low"),
+            max_output_tokens=8192,
         ),
     )
-    raw = parse_model_json(response.text or "")
+    return response.text or ""
+
+
+def classify_vertex(email: dict, attachments: list[dict]) -> dict:
+    user = _user_prompt(email, attachments)
+    raw = parse_model_json(_vertex_generate(f"{system_prompt()}\n\n{user}"))
     return apply_decision(email, attachments, raw)
+
+
+def classify_vertex_batch(emails: list[dict]) -> dict[str, dict]:
+    """One Gemini call for up to eight emails. Same batch prompt as the Cursor run."""
+    sys.path.insert(0, str(ROOT / "sdoc_eval"))
+    import run as runner  # noqa: E402
+
+    cases = [(rec, rec.get("attachments") or []) for rec in emails]
+    user = runner.build_batch_user_message(cases)
+    system = system_prompt().rstrip() + "\n\n" + runner.BATCH_ADDENDUM
+    ids = [rec["email_id"] for rec in emails]
+    parsed = runner.extract_json_records(_vertex_generate(f"{system}\n\n{user}"), ids)
+    by_id = {rec["email_id"]: rec for rec in emails}
+    out = {}
+    for eid, raw in parsed.items():
+        norm = runner.normalize_record(raw)
+        if isinstance(raw.get("si_fields"), dict):
+            norm["si_fields"] = raw["si_fields"]
+        if isinstance(raw.get("bl_fields"), dict):
+            norm["bl_fields"] = raw["bl_fields"]
+        out[eid] = apply_decision(by_id[eid], by_id[eid].get("attachments") or [], norm)
+    return out
 
 
 def _runner_email(email: dict, attachments: list) -> dict:
@@ -262,9 +299,7 @@ def classify(provider: str, email: dict, attachments: list[dict]) -> dict:
 def guard_vertex_batch(provider: str, n: int):
     if provider == "vertex" and n > VERTEX_MAX_BATCH:
         raise RuntimeError(
-            f"Vertex demo quota is limited. Refusing to process {n} emails "
-            f"(max {VERTEX_MAX_BATCH}). Switch Settings to Cursor (test) "
-            "or process one email at a time."
+            f"Refusing to process {n} emails (max {VERTEX_MAX_BATCH})."
         )
 
 
