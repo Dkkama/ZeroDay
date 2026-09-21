@@ -36,8 +36,8 @@ function makeNodes(w, h) {
 function drawFile(ctx, node, alpha, glow) {
   const { x, y, kind } = node;
   const [r, g, b] = hexRgb(kind.color);
-  const w = 46;
-  const h = 56;
+  const w = 56;
+  const h = 58;
   const fold = 11;
   ctx.save();
   ctx.translate(x, y);
@@ -67,7 +67,7 @@ function drawFile(ctx, node, alpha, glow) {
   ctx.fill();
   ctx.shadowBlur = 0;
   ctx.fillStyle = `rgba(${r},${g},${b},0.95)`;
-  ctx.font = "600 12px 'Segoe UI', system-ui, sans-serif";
+  ctx.font = "600 13px 'Segoe UI', system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(kind.ext, 0, 4);
@@ -142,7 +142,7 @@ export default function FileConstellation() {
       }
       for (const n of nodes) {
         const prox = near(n);
-        drawFile(ctx, n, 0.16 + prox * 0.78, prox);
+        drawFile(ctx, n, 0.38 + prox * 0.58, prox);
       }
       frame = requestAnimationFrame(tick);
     }
