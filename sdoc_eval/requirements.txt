@@ -1,0 +1,6 @@
+python-dotenv
+pypdf
+python-docx
+openpyxl
+pypdfium2
+pillow

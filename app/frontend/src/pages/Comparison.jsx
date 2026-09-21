@@ -1,0 +1,166 @@
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { api } from "../api";
+import FilePreview from "./FilePreview.jsx";
+
+const LABELS = {
+  shipper: "Shipper",
+  consignee: "Consignee",
+  notify_party: "Notify party",
+  port_of_loading: "Port of loading",
+  port_of_discharge: "Port of discharge",
+  container_count: "Container count",
+  gross_weight_kg: "Gross weight (kg)",
+};
+
+export default function Comparison() {
+  const [params, setParams] = useSearchParams();
+  const [queue, setQueue] = useState([]);
+  const [doc, setDoc] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [err, setErr] = useState("");
+  const id = params.get("id");
+
+  async function loadList() {
+    const rows = await api.emails({ queue: "true" });
+    setQueue(rows);
+    return rows;
+  }
+
+  useEffect(() => {
+    loadList().catch((e) => setErr(e.message));
+  }, []);
+
+  useEffect(() => {
+    if (!id) { setDoc(null); return; }
+    api.email(id).then(setDoc).catch((e) => setErr(e.message));
+  }, [id]);
+
+  function open(row) {
+    setParams({ id: row.email_id });
+    setEditing(false);
+  }
+
+  function idx() {
+    return queue.findIndex((r) => r.email_id === id);
+  }
+
+  function go(delta) {
+    const i = idx() + delta;
+    if (i >= 0 && i < queue.length) open(queue[i]);
+  }
+
+  async function validate() {
+    await api.validate(id);
+    const rows = await loadList();
+    const i = rows.findIndex((r) => r.email_id === id);
+    if (i >= 0) open(rows[i]);
+    else if (rows[0]) open(rows[0]);
+    else { setParams({}); setDoc(null); }
+  }
+
+  async function pick(field, source, value) {
+    await api.editFields(id, [{ name: field, source, value }]);
+    setDoc(await api.email(id));
+  }
+
+  if (!id) {
+    return (
+      <div>
+        <div className="header"><h1>Comparison requests</h1></div>
+        <p className="muted">Double-click a row. These are draft BLs the algorithm cannot close on its own.</p>
+        {err && <div className="error">{err}</div>}
+        <table>
+          <thead>
+            <tr><th>#</th><th>File / subject</th><th>Date caught</th><th>Reason</th></tr>
+          </thead>
+          <tbody>
+            {queue.map((r, i) => (
+              <tr key={r.email_id} className="row" onDoubleClick={() => open(r)}>
+                <td>{i + 1}</td>
+                <td>{r.subject || r.email_id}</td>
+                <td>{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
+                <td>{r.review_reason || (r.defect_fields || []).join(", ") || r.status}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  if (!doc) return <p className="muted">Opening {id}…</p>;
+  const si = (doc.attachments || []).find((a) => a.kind === "si");
+  const bl = (doc.attachments || []).find((a) => a.kind === "bl");
+
+  return (
+    <div>
+      <div className="header">
+        <h1>Comparison requests</h1>
+        <button className="btn" onClick={() => { setParams({}); setDoc(null); }}>Back to list</button>
+        <button className="btn" onClick={() => go(-1)} disabled={idx() <= 0}>Previous</button>
+        <button className="btn" onClick={() => go(1)} disabled={idx() >= queue.length - 1}>Next</button>
+        <button className="btn" onClick={() => setEditing((v) => !v)}>{editing ? "Done" : "Edit"}</button>
+        <button className="btn primary" onClick={validate}>Validate</button>
+      </div>
+      <p className="muted">{doc.email_id} · {doc.subject} · {doc.review_reason || doc.status}</p>
+
+      <div className="fields">
+        {(doc.field_view || []).map((f) => (
+          <div className="field-box" key={f.name}>
+            <b>{LABELS[f.name] || f.name}</b>
+            {f.empty ? (
+              <input
+                placeholder="AI could not read this field — double-click to type"
+                defaultValue={f.value}
+                onDoubleClick={(e) => e.currentTarget.removeAttribute("readonly")}
+                readOnly={!editing}
+                onBlur={(e) => pick(f.name, "custom", e.target.value)}
+              />
+            ) : (
+              <>
+                <div className="choices">
+                  {f.si && (
+                    <button className={f.source === "si" || f.source === "both" ? "on" : ""}
+                            onClick={() => pick(f.name, "si")}>SI: {f.si}</button>
+                  )}
+                  {f.bl && f.bl !== f.si && (
+                    <button className={f.source === "bl" ? "on" : ""}
+                            onClick={() => pick(f.name, "bl")}>BL: {f.bl}</button>
+                  )}
+                </div>
+                <input
+                  defaultValue={f.value}
+                  readOnly={!editing}
+                  onDoubleClick={(e) => { e.currentTarget.readOnly = false; }}
+                  onBlur={(e) => pick(f.name, "custom", e.target.value)}
+                />
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="split">
+        <div>
+          <h3>SI (model extract)</h3>
+          <pre className="pre">{JSON.stringify(doc.si_fields, null, 2)}</pre>
+        </div>
+        <div>
+          <h3>BL (model extract)</h3>
+          <pre className="pre">{JSON.stringify(doc.bl_fields, null, 2)}</pre>
+        </div>
+      </div>
+      <div className="split">
+        <div>
+          <h3>SI original — {si?.filename || "none"}</h3>
+          <FilePreview emailId={doc.email_id} att={si || (doc.attachments || [])[0]} />
+        </div>
+        <div>
+          <h3>BL original — {bl?.filename || "none"}</h3>
+          <FilePreview emailId={doc.email_id} att={bl || (doc.attachments || [])[1]} />
+        </div>
+      </div>
+    </div>
+  );
+}
