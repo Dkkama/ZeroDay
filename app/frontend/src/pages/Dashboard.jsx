@@ -88,7 +88,7 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
-      <div className="banner">
+      <div className="banner" role="link" onClick={() => nav("/comparison")}>
         There are <b>{stats.check_documents}</b> requests to check documents.
         {" "}<b>{stats.needs_human}</b> still need a human (mismatch or unreadable / missing / wrong file).
         {meta?.demo_score != null && (

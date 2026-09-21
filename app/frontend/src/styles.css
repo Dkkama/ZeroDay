@@ -241,6 +241,7 @@ a { color: inherit; }
 .banner {
   margin: 16px 0 20px;
   padding: 14px 16px;
+  cursor: pointer;
   background: #4d3d40;
   border: 1px solid #f0b4ba;
   color: #fff1f2;
