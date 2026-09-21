@@ -48,8 +48,8 @@ export default function Audit() {
         <table>
           <thead>
             <tr>
-              <SortTh className="col-num" label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-num hide-sm" label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-num" label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="col-chip" label="Actor" col="actor" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="col-subject" label="Document" col="document" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="col-subject" label="Change" col="change" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
@@ -67,8 +67,8 @@ export default function Audit() {
               return "";
             }).map((r) => (
               <tr key={r.id}>
-                <td className="col-num">{r.id}</td>
-                <td className="hide-sm">{(r.created_at || "").slice(0, 16).replace("T", " ")}</td>
+                <td className="col-num hide-sm">{r.id}</td>
+                <td className="col-num">{(r.created_at || "").slice(0, 16).replace("T", " ")}</td>
                 <td className="col-chip"><span className={`chip ${r.actor}`}>{r.actor}</span></td>
                 <td className="col-subject">{r.email_id}</td>
                 <td className="col-subject">{r.change_type}</td>
