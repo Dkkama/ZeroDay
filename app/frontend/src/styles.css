@@ -23,7 +23,7 @@ body {
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
-  font-size: 16px;
+  font-size: 18px;
 }
 
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -51,19 +51,19 @@ a { color: inherit; }
   flex-direction: column;
   justify-content: center;
 }
-.login-card h1 { margin: 0 0 10px; font-size: 32px; letter-spacing: -0.03em; }
-.login-card p { margin: 0 0 24px; color: var(--muted); font-size: 14px; line-height: 1.45; }
-.login-card label { display: block; text-align: left; font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
+.login-card h1 { margin: 0 0 10px; font-size: 34px; letter-spacing: -0.03em; }
+.login-card p { margin: 0 0 24px; color: var(--muted); font-size: 15px; line-height: 1.45; }
+.login-card label { display: block; text-align: left; font-size: 14px; color: var(--muted); margin: 14px 0 6px; }
 .login-card input {
   width: 100%;
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 12px 13px;
-  font-size: 15px;
+  font-size: 16px;
 }
-.login-card .btn { margin-top: 22px; padding: 11px 20px; font-size: 15px; }
-.login-card .muted { margin: 20px 0 0; font-size: 12px; }
+.login-card .btn { margin-top: 22px; padding: 11px 20px; font-size: 16px; }
+.login-card .muted { margin: 20px 0 0; font-size: 13px; }
 
 .shell { display: flex; height: 100%; overflow: hidden; }
 .sidebar {
@@ -78,8 +78,8 @@ a { color: inherit; }
   overflow: auto;
 }
 .brand { padding: 8px 10px 24px; }
-.brand b { display: block; font-size: 30px; letter-spacing: 0.04em; }
-.brand span { color: var(--muted); font-size: 14px; }
+.brand b { display: block; font-size: 32px; letter-spacing: 0.04em; }
+.brand span { color: var(--muted); font-size: 15px; }
 .nav a, .nav button.navlink {
   display: block;
   width: 100%;
@@ -92,7 +92,7 @@ a { color: inherit; }
   margin-bottom: 4px;
   color: var(--muted);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 17px;
 }
 .nav a.active, .nav a:hover, .nav button.navlink:hover {
   background: #1f2c34;
@@ -106,7 +106,7 @@ a { color: inherit; }
   gap: 12px;
   margin-bottom: 22px;
 }
-.header h1 { margin: 0; font-size: 32px; letter-spacing: -0.03em; flex: 1; }
+.header h1 { margin: 0; font-size: 34px; letter-spacing: -0.03em; flex: 1; }
 
 .btn {
   background: #24313a;
@@ -127,7 +127,7 @@ a { color: inherit; }
   padding: 16px;
   cursor: pointer;
 }
-.card .label { color: var(--muted); font-size: 15px; min-height: 40px; }
+.card .label { color: var(--muted); font-size: 16px; min-height: 40px; }
 .card .num { font-size: 36px; font-weight: 700; margin-top: 8px; }
 .banner {
   margin: 16px 0 20px;
@@ -144,18 +144,18 @@ a { color: inherit; }
   border-radius: var(--radius);
   padding: 16px;
 }
-.panel h3 { margin: 0 0 12px; font-size: 16px; color: var(--muted); font-weight: 500; }
+.panel h3 { margin: 0 0 12px; font-size: 17px; color: var(--muted); font-weight: 500; }
 
-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+table { width: 100%; border-collapse: collapse; font-size: 16px; }
 th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { color: var(--muted); font-weight: 500; font-size: 13px; }
+th { color: var(--muted); font-weight: 500; font-size: 14px; }
 tr.row { cursor: pointer; }
 tr.row:hover { background: #1f2c34; }
 
 .chip {
   display: inline-block;
   padding: 3px 10px;
-  font-size: 13px;
+  font-size: 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
 }
@@ -190,7 +190,7 @@ select option, .dark-select option {
   border-radius: var(--radius);
   padding: 10px 12px;
 }
-.field-box b { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.field-box b { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
 .choices { display: flex; gap: 6px; flex-wrap: wrap; }
 .choices button {
   background: #24313a;
@@ -225,7 +225,7 @@ select option, .dark-select option {
   overflow: auto;
   max-height: 280px;
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 13px;
+  font-size: 14px;
   white-space: pre-wrap;
 }
 .preview-wrap { display: flex; flex-direction: column; gap: 8px; }
@@ -234,7 +234,7 @@ select option, .dark-select option {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
 }
 .preview {
@@ -278,10 +278,10 @@ select option, .dark-select option {
 .sheet-name {
   padding: 8px 12px;
   color: #e8fff0;
-  font-size: 13px;
+  font-size: 14px;
   background: #185c37;
 }
-.excel { font-size: 13px; background: #fff; color: #1a1a1a; border-collapse: collapse; }
+.excel { font-size: 14px; background: #fff; color: #1a1a1a; border-collapse: collapse; }
 .excel th, .excel td {
   border: 1px solid #d0d0d0;
   padding: 5px 10px;
@@ -309,7 +309,7 @@ select option, .dark-select option {
 }
 .excel tbody tr:nth-child(even) td { background: #f7faf8; }
 .excel tbody tr:hover td { background: #e7f3ec; }
-.legend-list { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 8px; color: var(--muted); font-size: 13px; }
+.legend-list { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 8px; color: var(--muted); font-size: 14px; }
 .legend-list i { display: inline-block; width: 10px; height: 10px; border-radius: 99px; margin-right: 6px; }
 .recharts-default-tooltip { background: #141c22 !important; border: 1px solid #2a3842 !important; border-radius: 10px !important; }
 .recharts-tooltip-label, .recharts-tooltip-item { color: #e8eef2 !important; }
