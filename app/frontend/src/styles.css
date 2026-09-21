@@ -16,6 +16,12 @@
   --radius: 12px;
   --hover: #2c3a44;
   --btn: #2d3b45;
+  --btn-primary: #2a6f88;
+  --btn-primary-border: #4a90a8;
+  --btn-primary-text: #f3f8fb;
+  --btn-danger: #5a3a42;
+  --btn-danger-border: #f0a8b0;
+  --btn-danger-text: #fff1f2;
   --deep: #12181d;
   --text-zoom: 1;
 }
@@ -30,6 +36,12 @@ html[data-theme="light"] {
   --muted: #5c6b76;
   --hover: #e8eef2;
   --btn: #e4ebf0;
+  --btn-primary: #dbeafe;
+  --btn-primary-border: #0284c7;
+  --btn-primary-text: #0c4a6e;
+  --btn-danger: #ffe4e6;
+  --btn-danger-border: #e11d48;
+  --btn-danger-text: #9f1239;
   --deep: #eef2f5;
 }
 
@@ -43,6 +55,12 @@ html[data-theme="hc"] {
   --muted: #e8e8e8;
   --hover: #1a1a1a;
   --btn: #000000;
+  --btn-primary: #ffff00;
+  --btn-primary-border: #ffffff;
+  --btn-primary-text: #000000;
+  --btn-danger: #000000;
+  --btn-danger-border: #ffffff;
+  --btn-danger-text: #ffffff;
   --deep: #000000;
 }
 
@@ -192,13 +210,22 @@ a { color: inherit; }
 
 .btn {
   background: var(--btn);
+  color: var(--text);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 8px 14px;
   cursor: pointer;
 }
-.btn.primary { background: #1d4e63; border-color: #2a6b84; }
-.btn.danger { background: #5a3a42; border-color: #f0a8b0; }
+.btn.primary {
+  background: var(--btn-primary);
+  border-color: var(--btn-primary-border);
+  color: var(--btn-primary-text);
+}
+.btn.danger {
+  background: var(--btn-danger);
+  border-color: var(--btn-danger-border);
+  color: var(--btn-danger-text);
+}
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
@@ -284,7 +311,11 @@ select option, .dark-select option {
   cursor: pointer;
   max-width: 100%;
 }
-.choices button.on { border-color: #38bdf8; background: #164e63; }
+.choices button.on {
+  border-color: var(--btn-primary-border);
+  background: var(--btn-primary);
+  color: var(--btn-primary-text);
+}
 .field-box input {
   width: 100%;
   margin-top: 8px;
@@ -446,7 +477,11 @@ select option, .dark-select option {
   font-size: 15px;
   box-shadow: 0 6px 20px rgba(0,0,0,.25);
 }
-.a11y-btn.on, .a11y-panel button.on { border-color: #38bdf8; background: #164e63; color: #e8eef2; }
+.a11y-btn.on, .a11y-panel button.on {
+  border-color: var(--btn-primary-border);
+  background: var(--btn-primary);
+  color: var(--btn-primary-text);
+}
 .a11y-panel {
   position: absolute;
   right: 0;
