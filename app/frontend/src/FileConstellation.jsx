@@ -12,11 +12,13 @@ const KINDS = [
 
 const COUNT = 56;
 const LINK = 110;
-const REACH = 220;
-const TOUCH = 20;
-const COMFORT = 78;
-const CRUISE = 0.11;
-const MAX_SPEED = 0.42;
+const REACH = 240;
+const TOUCH = 28;
+const COMFORT = 86;
+const CRUISE = 0.34;
+const MAX_SPEED = 1.5;
+const BURST_MAX = 9;
+const BLAST_R = 560;
 
 function hexRgb(hex) {
   return [
@@ -122,27 +124,42 @@ function steer(n, mx, my) {
   const ux = dx / dist;
   const uy = dy / dist;
   if (dist < TOUCH) {
-    n.vx += ux * 0.012;
-    n.vy += uy * 0.012;
+    n.vx += ux * 0.055;
+    n.vy += uy * 0.055;
   } else if (dist < COMFORT) {
-    n.vx += ux * 0.0035;
-    n.vy += uy * 0.0035;
+    n.vx += ux * 0.02;
+    n.vy += uy * 0.02;
   } else if (dist < REACH) {
-    n.vx -= ux * 0.0016;
-    n.vy -= uy * 0.0016;
+    n.vx -= ux * 0.008;
+    n.vy -= uy * 0.008;
+  }
+}
+
+function explode(nodes, x, y) {
+  for (const n of nodes) {
+    const dx = n.x - x;
+    const dy = n.y - y;
+    const dist = Math.hypot(dx, dy) || 0.4;
+    const fall = Math.max(0.22, 1 - dist / BLAST_R);
+    const power = 2.2 + 6.8 * fall;
+    n.vx += (dx / dist) * power;
+    n.vy += (dy / dist) * power;
   }
 }
 
 function limitSpeed(n) {
   const sp = Math.hypot(n.vx, n.vy);
-  if (sp > MAX_SPEED) {
-    n.vx = (n.vx / sp) * MAX_SPEED;
-    n.vy = (n.vy / sp) * MAX_SPEED;
+  if (sp > BURST_MAX) {
+    n.vx = (n.vx / sp) * BURST_MAX;
+    n.vy = (n.vy / sp) * BURST_MAX;
+  } else if (sp > MAX_SPEED) {
+    n.vx *= 0.94;
+    n.vy *= 0.94;
   } else if (sp > CRUISE) {
-    n.vx *= 0.985;
-    n.vy *= 0.985;
+    n.vx *= 0.972;
+    n.vy *= 0.972;
   } else if (sp < CRUISE * 0.55) {
-    const f = (CRUISE * 0.7) / (sp || 0.001);
+    const f = (CRUISE * 0.75) / (sp || 0.001);
     n.vx *= f;
     n.vy *= f;
   }
@@ -230,10 +247,18 @@ export default function FileConstellation() {
     function onLeave() {
       mouse.current = { x: -9999, y: -9999 };
     }
+    function onClick(e) {
+      const box = canvas.getBoundingClientRect();
+      const x = e.clientX - box.left;
+      const y = e.clientY - box.top;
+      mouse.current = { x, y };
+      explode(nodes, x, y);
+    }
 
     const host = canvas.parentElement;
     host.addEventListener("mousemove", onMove);
     host.addEventListener("mouseleave", onLeave);
+    host.addEventListener("click", onClick);
     window.addEventListener("resize", size);
     size();
     frame = requestAnimationFrame(tick);
@@ -242,6 +267,7 @@ export default function FileConstellation() {
       cancelAnimationFrame(frame);
       host.removeEventListener("mousemove", onMove);
       host.removeEventListener("mouseleave", onLeave);
+      host.removeEventListener("click", onClick);
       window.removeEventListener("resize", size);
     };
   }, []);
