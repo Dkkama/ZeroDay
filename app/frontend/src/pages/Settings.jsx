@@ -19,9 +19,30 @@ export default function Settings() {
 
   useEffect(() => { refresh().catch((e) => setErr(e.message)); }, []);
 
+  useEffect(() => {
+    const busy = jobs.some((j) => j.status === "queued" || j.status === "running");
+    if (!busy) return undefined;
+    const t = setInterval(() => refresh().catch((e) => setErr(e.message)), 2000);
+    return () => clearInterval(t);
+  }, [jobs]);
+
+  async function run(label, fn) {
+    setErr("");
+    setMsg(label);
+    try {
+      const out = await fn();
+      await refresh();
+      return out;
+    } catch (e) {
+      setErr(e.message || String(e));
+      setMsg("");
+      await refresh().catch(() => {});
+      return null;
+    }
+  }
+
   async function saveProvider(llm_provider) {
-    await api.saveSettings({ llm_provider });
-    await refresh();
+    await run(`Using ${llm_provider}.`, () => api.saveSettings({ llm_provider }));
   }
 
   return (
@@ -44,19 +65,32 @@ export default function Settings() {
         <h3>Inbox source</h3>
         <p className="muted">Load the 520-email sample (Flash 1.00 labels, no live model), upload a hackathon zip, or fetch a mail server over IMAP.</p>
         <button className="btn primary" onClick={async () => {
-          setMsg("Loading sample…");
-          const out = await api.seed();
-          setMsg(`Loaded ${out.loaded} emails from the sample inbox.`);
+          const out = await run("Loading sample…", () => api.seed());
+          if (out) setMsg(`Loaded ${out.loaded} emails from the sample inbox.`);
         }}>Load sample dataset</button>
+        {" "}
+        <button className="btn" onClick={async () => {
+          const out = await run("Loading one email with attachments…", () => api.ingestOne());
+          if (out) {
+            setMsg(`Loaded ${out.email_id} (${(out.attachments || []).join(", ") || "no files"}). Open Inbox to preview.`);
+          }
+        }}>Load one email with attachments</button>
+        {" "}
+        <button className="btn" onClick={async () => {
+          const out = await run("Queueing Vertex on one email…", async () => {
+            await api.saveSettings({ llm_provider: "vertex" });
+            return api.processOne();
+          });
+          if (out) setMsg(`Job #${out.job.id} processing ${out.email_id} with ${out.provider}.`);
+        }}>Process one email — Vertex</button>
         {" "}
         <label className="btn">
           Upload zip
           <input type="file" hidden accept=".zip" onChange={async (e) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            const out = await api.upload(file);
-            setMsg(`Upload job #${out.job.id} queued (${out.count} emails).`);
-            refresh();
+            const out = await run("Uploading zip…", () => api.upload(file));
+            if (out) setMsg(`Upload job #${out.job.id} queued (${out.count} emails).`);
           }} />
         </label>
         <div className="fields" style={{ marginTop: 16 }}>
@@ -75,16 +109,19 @@ export default function Settings() {
         </label>
         <div style={{ height: 10 }} />
         <button className="btn" onClick={async () => {
-          await api.saveSettings({ imap });
-          await api.imapTest();
-          setMsg("IMAP connected.");
+          const out = await run("Connecting IMAP (fails in ~8s if the host is wrong)…", async () => {
+            await api.saveSettings({ imap });
+            return api.imapTest();
+          });
+          if (out) setMsg("IMAP connected.");
         }}>Connect</button>
         {" "}
         <button className="btn" onClick={async () => {
-          await api.saveSettings({ imap });
-          const out = await api.imapFetch(10);
-          setMsg(`IMAP job #${out.job.id} fetching ${out.count} messages.`);
-          refresh();
+          const out = await run("Fetching IMAP…", async () => {
+            await api.saveSettings({ imap });
+            return api.imapFetch(10);
+          });
+          if (out) setMsg(`IMAP job #${out.job.id} fetching ${out.count} messages.`);
         }}>Fetch now</button>
         <p className="muted">Last sync: {settings?.imap?.last_sync || "never"} · {settings?.imap?.status}</p>
       </div>

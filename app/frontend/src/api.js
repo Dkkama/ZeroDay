@@ -59,6 +59,8 @@ export const api = {
   imapTest: () => req("/api/ingest/imap/test", { method: "POST" }),
   imapFetch: (limit = 10) =>
     req("/api/ingest/imap/fetch", { method: "POST", body: JSON.stringify({ limit }) }),
+  ingestOne: () => req("/api/ingest/one", { method: "POST" }),
+  processOne: () => req("/api/process/one", { method: "POST" }),
   process: (email_ids) =>
     req("/api/process", { method: "POST", body: JSON.stringify({ email_ids }) }),
   retry: (id) => req(`/api/jobs/${id}/retry`, { method: "POST" }),
