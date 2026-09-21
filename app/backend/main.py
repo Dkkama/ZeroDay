@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from config import (
     CATEGORY_META,
     COMPARE_FIELDS,
+    DATA_V2,
     DEMO_EMAIL,
     DEMO_PASSWORD,
     FLASH_SCORE,
@@ -36,7 +37,14 @@ from exports import (
 )
 from ingest import fetch_imap, ingest_zip
 from llm import classify, guard_vertex_batch
-from seed import load_attachment, load_flash_score, seed_sample
+from seed import (
+    LIVE_EMAIL_ID,
+    build_record,
+    load_attachment,
+    load_flash_score,
+    load_one_attached,
+    seed_sample,
+)
 from store import Store, public_email
 
 store = Store()
@@ -378,6 +386,36 @@ def imap_fetch(body: ImapBody, authorization: Optional[str] = Header(None)):
     threading.Thread(target=_run_ingest, args=(job["id"], root, emails, "imap", provider),
                      daemon=True).start()
     return {"job": job, "count": len(emails)}
+
+
+@app.post("/api/ingest/one")
+def ingest_one(authorization: Optional[str] = Header(None)):
+    require_auth(authorization)
+    rec = load_one_attached(store)
+    return {
+        "email_id": rec["email_id"],
+        "subject": rec.get("subject"),
+        "attachments": [a.get("filename") or Path(a.get("rel") or "").name
+                        for a in rec.get("attachments") or []],
+        "source": rec.get("source"),
+    }
+
+
+@app.post("/api/process/one")
+def process_one(authorization: Optional[str] = Header(None)):
+    require_auth(authorization)
+    provider = store.settings()["llm_provider"]
+    rec = store.get_email(LIVE_EMAIL_ID)
+    if not rec:
+        rec = load_one_attached(store)
+    try:
+        guard_vertex_batch(provider, 1)
+    except RuntimeError as exc:
+        raise HTTPException(400, str(exc))
+    job = store.add_job("process", provider, 1)
+    threading.Thread(target=_run_process, args=(job["id"], [rec["email_id"]], provider),
+                     daemon=True).start()
+    return {"job": job, "email_id": rec["email_id"], "provider": provider}
 
 
 @app.post("/api/process")

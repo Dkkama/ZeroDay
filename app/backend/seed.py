@@ -74,6 +74,23 @@ def build_record(email: dict, decision: dict, root: Path, source: str = "seed") 
     }
 
 
+LIVE_EMAIL_ID = "live_001"
+LIVE_SOURCE_EMAIL = "email_004"
+
+
+def load_one_attached(store: Store, email_id: str = LIVE_EMAIL_ID) -> dict:
+    path = DATA_V2 / "inbox" / f"{LIVE_SOURCE_EMAIL}.json"
+    if not path.exists():
+        raise FileNotFoundError(f"sample {LIVE_SOURCE_EMAIL} missing at {path}")
+    email = json.loads(path.read_text())
+    email["email_id"] = email_id
+    rec = build_record(email, {}, DATA_V2, source="upload")
+    rec["email_id"] = email_id
+    rec["processed_live"] = False
+    store.upsert_email(rec, actor="program", change_type="loaded one email with attachments")
+    return rec
+
+
 def seed_sample(store: Store, replace: bool = True) -> int:
     inbox_dir = DATA_V2 / "inbox"
     if not inbox_dir.exists():
