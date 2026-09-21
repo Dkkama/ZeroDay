@@ -33,11 +33,13 @@ export default function A11yControl() {
         className={`a11y-btn${open ? " on" : ""}`}
         type="button"
         aria-expanded={open}
+        aria-label="Accessibility"
         aria-controls="a11y-panel"
+        title="Accessibility"
         onClick={() => setOpen((v) => !v)}
       >
         <IconA11y />
-        Accessibility
+        <span className="a11y-label">Accessibility</span>
       </button>
       {open && (
         <div className="a11y-panel" id="a11y-panel" role="dialog" aria-label="Accessibility">
