@@ -16,7 +16,7 @@
 }
 
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; margin: 0; }
+html, body, #root { height: 100%; margin: 0; overflow: hidden; }
 body {
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   background: var(--bg);
@@ -50,14 +50,17 @@ a { color: inherit; }
   padding: 10px 12px;
 }
 
-.shell { display: flex; min-height: 100%; }
+.shell { display: flex; height: 100%; overflow: hidden; }
 .sidebar {
   width: 236px;
+  flex-shrink: 0;
+  height: 100%;
   background: var(--bg-2);
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   padding: 18px 12px;
+  overflow: auto;
 }
 .brand { padding: 4px 10px 22px; }
 .brand b { display: block; font-size: 18px; letter-spacing: 0.04em; }
@@ -79,7 +82,7 @@ a { color: inherit; }
   color: var(--text);
 }
 .nav-foot { margin-top: auto; }
-.page { flex: 1; min-width: 0; padding: 28px 32px 48px; }
+.page { flex: 1; min-width: 0; min-height: 0; overflow: auto; padding: 28px 32px 48px; }
 .header {
   display: flex;
   align-items: center;
