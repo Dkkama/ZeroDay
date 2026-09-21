@@ -280,13 +280,19 @@ def validate(email_id: str, authorization: Optional[str] = Header(None)):
     current = store.get_email(email_id)
     if not current:
         raise HTTPException(404, "email not found")
-    was_mismatch = current.get("status") == "MISMATCH"
+    issue = current.get("status") in ("MISMATCH", "NEEDS_REVIEW")
     rec = store.update_email(
         email_id,
-        {"human_validated": True, "fixed": was_mismatch or current.get("fixed", False)},
+        {"human_validated": True, "fixed": issue or bool(current.get("fixed"))},
         actor="human",
-        change_type="validated BL / resolved fields",
-        details={"human_validated": True, "fixed": was_mismatch},
+        change_type="fixed by human",
+        details={
+            "human_validated": True,
+            "fixed": True,
+            "status": current.get("status"),
+            "review_reason": current.get("review_reason"),
+            "defect_fields": current.get("defect_fields"),
+        },
     )
     return public_email(rec)
 
