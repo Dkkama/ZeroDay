@@ -266,6 +266,8 @@ a { color: inherit; }
 table { width: 100%; border-collapse: collapse; font-size: 16px; }
 th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .col-num, .col-chip, .col-meta { width: 1%; white-space: nowrap; }
+.col-date { width: 1%; white-space: nowrap; }
+.col-date .date-part { white-space: nowrap; }
 .col-subject { min-width: 0; }
 .show-sm { display: none; }
 th { color: var(--muted); font-weight: 500; font-size: 14px; }
@@ -678,6 +680,7 @@ html[data-theme="light"] .chip.program { color: #075985; background: #e0f2fe; bo
   th, td { padding: 6px 5px; vertical-align: middle; }
   td { overflow-wrap: normal; }
   .col-subject { overflow-wrap: anywhere; }
+  .col-date { white-space: normal; }
   .panel { padding: 10px; }
   .panel h3 { font-size: 14px; }
   .nav a, .nav button.navlink { font-size: 15px; padding: 10px 12px; }

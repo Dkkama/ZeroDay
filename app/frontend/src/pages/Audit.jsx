@@ -3,6 +3,17 @@ import { api, download } from "../api";
 import { auditRowsToPdf } from "../pdf.js";
 import { SortTh, nextSort, sortRows } from "../sort.jsx";
 
+function AuditWhen({ value }) {
+  const raw = (value || "").slice(0, 16).replace("T", " ");
+  const [day, time] = raw.split(" ");
+  return (
+    <>
+      <span className="date-part">{day}</span>
+      {time ? <>{" "}<span className="date-part">{time}</span></> : null}
+    </>
+  );
+}
+
 export default function Audit() {
   const [rows, setRows] = useState([]);
   const [exportOn, setExportOn] = useState(false);
@@ -49,7 +60,7 @@ export default function Audit() {
           <thead>
             <tr>
               <SortTh className="col-num hide-sm" label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh className="col-num" label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="col-date" label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="col-chip" label="Actor" col="actor" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="col-subject" label="Document" col="document" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               <SortTh className="col-subject" label="Change" col="change" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
@@ -68,7 +79,7 @@ export default function Audit() {
             }).map((r) => (
               <tr key={r.id}>
                 <td className="col-num hide-sm">{r.id}</td>
-                <td className="col-num">{(r.created_at || "").slice(0, 16).replace("T", " ")}</td>
+                <td className="col-date"><AuditWhen value={r.created_at} /></td>
                 <td className="col-chip"><span className={`chip ${r.actor}`}>{r.actor}</span></td>
                 <td className="col-subject">{r.email_id}</td>
                 <td className="col-subject">{r.change_type}</td>
