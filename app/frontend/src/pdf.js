@@ -23,9 +23,30 @@ function concat(parts) {
   return out;
 }
 
+const PAGE_W = 612;
+const MARGIN = 40;
+const FONT_SIZE = 10;
+const CHAR_W = FONT_SIZE * 0.6;
+const MAX_CHARS = Math.floor((PAGE_W - MARGIN * 2) / CHAR_W);
+
+function wrapLine(line) {
+  const text = String(line || "");
+  if (text.length <= MAX_CHARS) return [text];
+  const out = [];
+  let rest = text;
+  while (rest.length > MAX_CHARS) {
+    let cut = rest.lastIndexOf(" ", MAX_CHARS);
+    if (cut < MAX_CHARS * 0.55) cut = MAX_CHARS;
+    out.push(rest.slice(0, cut).trimEnd());
+    rest = rest.slice(cut).trimStart();
+  }
+  if (rest) out.push(rest);
+  return out;
+}
+
 export function linesToPdf(lines) {
   const perPage = 48;
-  const rows = lines.length ? lines : [""];
+  const rows = (lines.length ? lines : [""]).flatMap(wrapLine);
   const chunks = [];
   for (let i = 0; i < rows.length; i += perPage) chunks.push(rows.slice(i, i + perPage));
 
@@ -35,9 +56,9 @@ export function linesToPdf(lines) {
   const streams = [];
 
   for (const chunk of chunks) {
-    const cmds = ["BT", "/F1 10 Tf", "40 760 Td", "13 TL"];
+    const cmds = ["BT", `/F1 ${FONT_SIZE} Tf`, `${MARGIN} 760 Td`, "13 TL"];
     chunk.forEach((line, i) => {
-      cmds.push(`(${escapePdf(line.slice(0, 110))}) Tj`);
+      cmds.push(`(${escapePdf(line)}) Tj`);
       if (i !== chunk.length - 1) cmds.push("T*");
     });
     cmds.push("ET");
