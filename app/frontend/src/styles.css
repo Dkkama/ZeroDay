@@ -355,3 +355,42 @@ select option, .dark-select option {
   .cards { grid-template-columns: 1fr 1fr; }
   .charts, .split, .fields { grid-template-columns: 1fr; }
 }
+
+.nav-scrim { display: none; }
+
+@media (max-width: 820px) {
+  .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 14;
+    cursor: pointer;
+  }
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(280px, 86vw);
+    z-index: 16;
+    transform: translateX(0);
+    transition: transform 0.2s ease;
+  }
+  .sidebar.is-hidden {
+    width: min(280px, 86vw);
+    padding: 18px 12px;
+    border-right: 1px solid var(--line);
+    overflow: auto;
+    pointer-events: none;
+    transform: translateX(-105%);
+  }
+  .page { padding: 16px 14px 36px; }
+  .header { flex-wrap: wrap; }
+  .header h1 { font-size: 26px; }
+  .cards { grid-template-columns: 1fr; }
+  .toolbar input, .toolbar select { width: 100%; }
+  .login-card { width: min(400px, 100%); min-height: 0; padding: 32px 20px; }
+  .modal { width: calc(100vw - 24px); }
+  .preview-full.modal-back { padding: 8px; }
+  table { min-width: 640px; }
+}

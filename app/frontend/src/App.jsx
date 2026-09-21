@@ -15,9 +15,12 @@ const NAV = [
   { to: "/audit", label: "Audit log" },
 ];
 
-function Sidebar({ open, onToggle }) {
+function isMobileNav() {
+  return window.matchMedia("(max-width: 820px)").matches;
+}
+
+function Sidebar({ open, onToggle, onGo }) {
   const loc = useLocation();
-  const nav = useNavigate();
   return (
     <aside className={`sidebar${open ? "" : " is-hidden"}`} aria-hidden={!open}>
       <div className="brand">
@@ -30,17 +33,17 @@ function Sidebar({ open, onToggle }) {
       <nav className="nav">
         {NAV.map((item) => (
           <a key={item.to} href={item.to} className={loc.pathname === item.to ? "active" : ""}
-             onClick={(e) => { e.preventDefault(); nav(item.to); }}>
+             onClick={(e) => { e.preventDefault(); onGo(item.to); }}>
             {item.label}
           </a>
         ))}
       </nav>
       <div className="nav-foot nav">
         <a href="/settings" className={loc.pathname === "/settings" ? "active" : ""}
-           onClick={(e) => { e.preventDefault(); nav("/settings"); }}>
+           onClick={(e) => { e.preventDefault(); onGo("/settings"); }}>
           Settings
         </a>
-        <button className="navlink" onClick={() => { setToken(""); nav("/login"); }}>
+        <button className="navlink" onClick={() => onGo("/login", true)}>
           Sign out
         </button>
       </div>
@@ -49,23 +52,30 @@ function Sidebar({ open, onToggle }) {
 }
 
 function Guard({ children }) {
+  const nav = useNavigate();
   const [ok, setOk] = useState(Boolean(token()));
-  const [navOpen, setNavOpen] = useState(() => localStorage.getItem("zd-sidebar") !== "0");
+  const [navOpen, setNavOpen] = useState(() => !isMobileNav() && localStorage.getItem("zd-sidebar") !== "0");
   useEffect(() => {
     if (!token()) return;
     api.me().then(() => setOk(true)).catch(() => setOk(false));
   }, []);
+  function setNav(next) {
+    setNavOpen(next);
+    if (!isMobileNav()) localStorage.setItem("zd-sidebar", next ? "1" : "0");
+  }
   function toggleNav() {
-    setNavOpen((cur) => {
-      const next = !cur;
-      localStorage.setItem("zd-sidebar", next ? "1" : "0");
-      return next;
-    });
+    setNav(!navOpen);
+  }
+  function go(to, signOut) {
+    if (signOut) setToken("");
+    nav(to);
+    if (isMobileNav()) setNav(false);
   }
   if (!token() || !ok) return <Navigate to="/login" replace />;
   return (
     <div className={`shell${navOpen ? "" : " nav-hidden"}`}>
-      <Sidebar open={navOpen} onToggle={toggleNav} />
+      {navOpen && <button className="nav-scrim" type="button" aria-label="Close menu" onClick={toggleNav} />}
+      <Sidebar open={navOpen} onToggle={toggleNav} onGo={go} />
       <main className="page">
         {!navOpen && (
           <button className="sidebar-show" type="button" onClick={toggleNav} aria-label="Show sidebar">
