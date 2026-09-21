@@ -121,8 +121,12 @@ export default function Comparison() {
       <p className="muted">{doc.email_id} · {doc.subject} · {statusLabel(doc)} · {doc.review_reason || (doc.defect_fields || []).join(", ")}</p>
 
       <div className="fields" key={doc.email_id}>
-        {(doc.field_view || []).map((f) => (
-          <div className={`field-box${valuesDiffer(f.si, f.bl) ? " mismatch" : ""}`} key={`${doc.email_id}-${f.name}`}>
+        {(doc.field_view || []).map((f) => {
+          const differs = valuesDiffer(f.si, f.bl);
+          const decided = String((doc.resolved_fields || {})[f.name] || "").trim().length > 0;
+          const tone = differs ? (decided ? " decided" : " mismatch") : "";
+          return (
+          <div className={`field-box${tone}`} key={`${doc.email_id}-${f.name}`}>
             <b>{FIELD_LABELS[f.name] || f.name}</b>
             {f.empty ? (
               <input
@@ -153,7 +157,8 @@ export default function Comparison() {
               </>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="split">
