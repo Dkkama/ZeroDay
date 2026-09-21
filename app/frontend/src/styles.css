@@ -265,6 +265,9 @@ a { color: inherit; }
 
 table { width: 100%; border-collapse: collapse; font-size: 16px; }
 th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.col-num, .col-chip, .col-meta { width: 1%; white-space: nowrap; }
+.col-subject { min-width: 0; }
+.show-sm { display: none; }
 th { color: var(--muted); font-weight: 500; font-size: 14px; }
 .sort-th { cursor: pointer; user-select: none; white-space: nowrap; }
 .sort-th:hover, .sort-on { color: var(--text); }
@@ -277,6 +280,7 @@ tr.row:hover { background: var(--hover); }
   font-size: 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
+  white-space: nowrap;
 }
 .chip.BL_COMPARISON { color: #ffe4e8; background: #6a454c; border-color: #f0a8b0; }
 .chip.SI_REQUEST { color: #e4f0ff; background: #3d5270; border-color: #8eb8f0; }
@@ -289,7 +293,13 @@ tr.row:hover { background: var(--hover); }
 .chip.human { color: #f3e8ff; background: #4a3a62; border-color: #c4a0e8; }
 .chip.program { color: #d7f3ff; background: #2f4f62; border-color: #7ec8e8; }
 
-.toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+.mail-toolbar { flex-wrap: nowrap; }
+.mail-toolbar input {
+  flex: 1 1 22rem;
+  min-width: 18rem;
+}
+.mail-toolbar select { flex: 0 0 auto; }
 .toolbar input, .toolbar select, select, .dark-select {
   background-color: var(--bg);
   color: var(--text);
@@ -621,21 +631,23 @@ html[data-theme="light"] .chip.program { color: #075985; background: #e0f2fe; bo
     justify-content: flex-start;
     padding: 12px 14px;
   }
-  .page { padding: 14px 12px 96px; overflow-x: hidden; }
-  .header { flex-wrap: wrap; align-items: flex-start; }
-  .header h1 { font-size: 24px; flex: 1 1 auto; min-width: 0; }
+  .page { padding: 12px 10px 88px; overflow-x: hidden; font-size: 14px; }
+  .header { flex-wrap: wrap; align-items: flex-start; margin-bottom: 12px; }
+  .header h1 { font-size: 20px; flex: 1 1 auto; min-width: 0; }
   .header-actions { width: 100%; }
   .header-actions .btn { flex: 1 1 calc(50% - 8px); text-align: center; }
+  .btn { padding: 6px 10px; font-size: 13px; }
   .cards { grid-template-columns: 1fr 1fr; }
-  .card { padding: 12px; }
-  .card .label { font-size: 13px; min-height: 0; }
-  .card .num { font-size: 28px; }
-  .banner { font-size: 14px; }
-  .toolbar { flex-direction: column; }
-  .toolbar input, .toolbar select { width: 100%; }
+  .card { padding: 10px; }
+  .card .label { font-size: 12px; min-height: 0; }
+  .card .num { font-size: 22px; margin-top: 4px; }
+  .banner { font-size: 13px; padding: 10px 12px; }
+  .toolbar { flex-direction: column; flex-wrap: wrap; align-items: stretch; }
+  .mail-toolbar { flex-wrap: wrap; }
+  .toolbar input, .toolbar select, .mail-toolbar input { width: 100%; min-width: 0; flex: 1 1 auto; }
   .btn-row .btn { flex: 1 1 auto; }
   .choices button { text-align: left; overflow-wrap: anywhere; }
-  .chip { max-width: 100%; overflow-wrap: anywhere; }
+  .chip { font-size: 11px; padding: 2px 6px; max-width: none; overflow-wrap: normal; }
   .login { padding: 16px 12px 88px; }
   .login-sky { opacity: 0.4; }
   .login-card { width: min(400px, 100%); min-height: 0; padding: 28px 18px; }
@@ -658,10 +670,18 @@ html[data-theme="light"] .chip.program { color: #075985; background: #e0f2fe; bo
   }
   .a11y-panel { width: min(260px, calc(100vw - 24px)); }
   .hide-sm { display: none !important; }
-  table { min-width: 0; font-size: 14px; }
-  th, td { padding: 8px 6px; }
-  td { overflow-wrap: anywhere; }
-  .panel { padding: 12px; }
+  .show-sm { display: table-cell !important; }
+  .col-meta .chip { display: block; width: max-content; margin-top: 4px; }
+  .col-meta .chip:first-child { margin-top: 0; }
+  table { min-width: 0; font-size: 12px; }
+  th { font-size: 11px; }
+  th, td { padding: 6px 5px; vertical-align: middle; }
+  td { overflow-wrap: normal; }
+  .col-subject { overflow-wrap: anywhere; }
+  .panel { padding: 10px; }
+  .panel h3 { font-size: 14px; }
+  .nav a, .nav button.navlink { font-size: 15px; padding: 10px 12px; }
+  .mobile-brand b { font-size: 16px; }
   .recharts-pie-labels { display: none; }
 }
 
