@@ -72,9 +72,7 @@ a { color: inherit; }
   place-items: center;
   overflow: auto;
   padding: 24px;
-  background:
-    radial-gradient(1200px 500px at 10% -10%, #1d3a4a 0%, transparent 50%),
-    var(--bg);
+  background: var(--bg);
 }
 .login-sky {
   position: absolute;
