@@ -1,6 +1,80 @@
 import { useEffect, useState } from "react";
 import { attachmentUrl, token } from "../api";
 
+function isSpreadsheet(att) {
+  const name = (att?.filename || "").toLowerCase();
+  const ext = (att?.ext || "").toLowerCase();
+  return ext === "xlsx" || ext === "xls" || name.endsWith(".xlsx") || name.endsWith(".xls");
+}
+
+function parseExtractedSheet(text) {
+  if (!text) return null;
+  const sheets = [];
+  let current = { name: "Sheet", rows: [] };
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    const sheetHead = line.match(/^\[sheet:\s*(.+?)\]$/i);
+    if (sheetHead) {
+      if (current.rows.length) sheets.push(current);
+      current = { name: sheetHead[1], rows: [] };
+      continue;
+    }
+    current.rows.push(line.includes("|")
+      ? line.split("|").map((c) => c.trim())
+      : [line]);
+  }
+  if (current.rows.length) sheets.push(current);
+  return sheets.length ? { sheets } : null;
+}
+
+function colLetter(n) {
+  let s = "";
+  let x = n + 1;
+  while (x > 0) {
+    const m = (x - 1) % 26;
+    s = String.fromCharCode(65 + m) + s;
+    x = Math.floor((x - 1) / 26);
+  }
+  return s;
+}
+
+function SheetGrid({ data }) {
+  if (!data?.sheets?.length) return <p className="muted">Empty spreadsheet</p>;
+  return (
+    <div className="sheet">
+      {data.sheets.map((s) => {
+        const width = Math.max(1, ...s.rows.map((r) => r.length));
+        return (
+          <div key={s.name} className="sheet-block">
+            <div className="sheet-name">{s.name}</div>
+            <table className="excel">
+              <thead>
+                <tr>
+                  <th className="excel-corner" />
+                  {Array.from({ length: width }, (_, j) => (
+                    <th key={j}>{colLetter(j)}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {s.rows.map((row, i) => (
+                  <tr key={i}>
+                    <th className="excel-row">{i + 1}</th>
+                    {Array.from({ length: width }, (_, j) => (
+                      <td key={j}>{row[j] || ""}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function FilePreview({ emailId, att }) {
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
@@ -13,21 +87,28 @@ export default function FilePreview({ emailId, att }) {
     const ctrl = new AbortController();
     setUrl("");
     setText("");
-    setSheet(null);
+    setSheet(isSpreadsheet(att) ? parseExtractedSheet(att?.text) : null);
     setErr("");
     setFull(false);
 
     async function load() {
       if (!att?.filename) return;
-      const ext = (att.ext || "").toLowerCase();
-      if (ext === "xlsx" || ext === "xls") {
-        const res = await fetch(
-          `${attachmentUrl(emailId, att.filename)}/sheet`,
-          { headers: { Authorization: `Bearer ${token()}` }, signal: ctrl.signal },
-        );
-        if (!res.ok) throw new Error("Could not read spreadsheet");
-        const data = await res.json();
-        if (!dead) setSheet(data);
+      if (isSpreadsheet(att)) {
+        try {
+          const res = await fetch(
+            `${attachmentUrl(emailId, att.filename)}/sheet`,
+            { headers: { Authorization: `Bearer ${token()}` }, signal: ctrl.signal },
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (!dead && data.sheets?.length) setSheet(data);
+          }
+        } catch (e) {
+          if (e.name === "AbortError") return;
+        }
+        if (!dead && !parseExtractedSheet(att?.text)) {
+          setErr("");
+        }
         return;
       }
       const res = await fetch(attachmentUrl(emailId, att.filename), {
@@ -35,6 +116,7 @@ export default function FilePreview({ emailId, att }) {
         signal: ctrl.signal,
       });
       if (!res.ok) throw new Error("Could not open file");
+      const ext = (att.ext || "").toLowerCase();
       if (ext === "txt" || ext === "csv") {
         const body = await res.text();
         if (!dead) setText(body);
@@ -46,52 +128,32 @@ export default function FilePreview({ emailId, att }) {
 
     load().catch((e) => {
       if (e.name === "AbortError") return;
-      if (!dead) setErr(att?.text || att?.notes || e.message || "Could not open file");
+      if (!dead && !isSpreadsheet(att)) {
+        setErr(att?.notes || e.message || "Could not open file");
+      }
     });
     return () => {
       dead = true;
       ctrl.abort();
-      setUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return "";
-      });
     };
-  }, [emailId, att?.filename]);
+  }, [emailId, att?.filename, att?.text]);
 
   if (!att) return <div className="preview"><p className="muted">No file</p></div>;
   const ext = (att.ext || "").toLowerCase();
+  const spreadsheet = isSpreadsheet(att);
 
   const body = (
     <>
-      {sheet && (
-        <div className="sheet">
-          {sheet.sheets.map((s) => (
-            <div key={s.name}>
-              <div className="sheet-name">{s.name}</div>
-              <table>
-                <tbody>
-                  {s.rows.map((row, i) => (
-                    <tr key={i}>
-                      {row.map((cell, j) => (
-                        i === 0 ? <th key={j}>{cell}</th> : <td key={j}>{cell}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
-        </div>
-      )}
-      {ext === "pdf" && url && <iframe title={att.filename} src={url} />}
-      {(ext === "txt" || ext === "csv" || (text && !sheet && ext !== "pdf")) && (
+      {spreadsheet && <SheetGrid data={sheet || parseExtractedSheet(att.text)} />}
+      {!spreadsheet && ext === "pdf" && url && <iframe title={att.filename} src={url} />}
+      {!spreadsheet && (ext === "txt" || ext === "csv" || text) && (
         <pre className="pre">{text || att.text}</pre>
       )}
-      {url && ext !== "pdf" && !sheet && (
-        <pre className="pre">{att.text || `${att.filename} (${ext})`}</pre>
+      {!spreadsheet && url && ext !== "pdf" && (
+        <pre className="pre">{att.text || `${att.filename}`}</pre>
       )}
       {err && <p className="muted">{err}</p>}
-      {!sheet && !url && !text && !err && <p className="muted">Loading {att.filename}…</p>}
+      {!spreadsheet && !url && !text && !err && <p className="muted">Loading {att.filename}…</p>}
     </>
   );
 

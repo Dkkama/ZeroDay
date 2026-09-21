@@ -243,11 +243,42 @@ select option, .dark-select option {
 }
 .preview-full-body { flex: 1; max-height: none; min-height: 0; }
 .preview-full-body iframe { height: 100%; }
-.sheet { overflow: auto; }
-.sheet-name { padding: 8px 10px; color: var(--muted); font-size: 13px; }
-.sheet table { font-size: 13px; background: #10161b; }
-.sheet th { background: #1c2a33; color: #e8eef2; position: sticky; top: 0; }
-.sheet td, .sheet th { border: 1px solid #2a3842; padding: 6px 8px; white-space: nowrap; }
+.sheet { overflow: auto; background: #1d6f42; padding: 0 0 8px; }
+.sheet-block { min-width: max-content; }
+.sheet-name {
+  padding: 8px 12px;
+  color: #e8fff0;
+  font-size: 13px;
+  background: #185c37;
+}
+.excel { font-size: 13px; background: #fff; color: #1a1a1a; border-collapse: collapse; }
+.excel th, .excel td {
+  border: 1px solid #d0d0d0;
+  padding: 5px 10px;
+  white-space: nowrap;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.excel thead th {
+  background: #e8e8e8;
+  color: #333;
+  font-weight: 600;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.excel-corner, .excel-row {
+  background: #f3f3f3 !important;
+  color: #666;
+  text-align: center;
+  min-width: 36px;
+  position: sticky;
+  left: 0;
+}
+.excel tbody tr:nth-child(even) td { background: #f7faf8; }
+.excel tbody tr:hover td { background: #e7f3ec; }
 .legend-list { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 8px; color: var(--muted); font-size: 13px; }
 .legend-list i { display: inline-block; width: 10px; height: 10px; border-radius: 99px; margin-right: 6px; }
 .recharts-default-tooltip { background: #141c22 !important; border: 1px solid #2a3842 !important; border-radius: 10px !important; }
