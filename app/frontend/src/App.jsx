@@ -8,6 +8,8 @@ import Comparison from "./pages/Comparison.jsx";
 import Audit from "./pages/Audit.jsx";
 import Settings from "./pages/Settings.jsx";
 import A11yControl from "./A11yControl.jsx";
+import { PageDrop } from "./ZipDrop.jsx";
+import { stageZip } from "./zipDrop.js";
 import {
   IconAudit, IconBurger, IconCompare, IconDashboard, IconInbox, IconSettings, IconSignOut,
 } from "./navIcons.jsx";
@@ -67,6 +69,7 @@ function Sidebar({ open, onToggle, onGo, mobile }) {
 
 function Guard() {
   const nav = useNavigate();
+  const loc = useLocation();
   const [ok, setOk] = useState(Boolean(token()));
   const [mobile, setMobile] = useState(() => isMobileNav());
   const [navOpen, setNavOpen] = useState(() => !isMobileNav() && localStorage.getItem("zd-sidebar") !== "0");
@@ -111,6 +114,9 @@ function Guard() {
             <span>Document desk</span>
           </div>
         </header>
+        {(loc.pathname === "/" || loc.pathname === "/inbox") && (
+          <PageDrop onZip={(file) => { stageZip(file); nav("/settings"); }} />
+        )}
         <main className="page"><Outlet /></main>
       </div>
     </div>

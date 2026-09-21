@@ -414,6 +414,51 @@ html[data-theme="light"] .line-bad {
   border-radius: 8px;
 }
 .extract-line b { color: var(--muted); font-weight: 500; }
+.zip-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 160px;
+  margin-top: 8px;
+  padding: 24px;
+  text-align: center;
+  border: 1.5px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  cursor: pointer;
+}
+.zip-zone span { color: var(--muted); font-size: 14px; max-width: 36rem; }
+.zip-zone.over, .zip-zone:hover {
+  border-color: var(--btn-primary-border);
+  background: var(--hover);
+}
+.zip-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 12, 16, 0.72);
+}
+.zip-overlay-card {
+  width: min(560px, 100%);
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 32px;
+  border: 1.5px dashed var(--btn-primary-border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.zip-overlay-card b { font-size: 28px; }
+.zip-overlay-card p { margin: 0; color: var(--muted); max-width: 28rem; }
 .inline-preview { padding: 8px 10px 12px; }
 .preview-row td {
   padding: 0;

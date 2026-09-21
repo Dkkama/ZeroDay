@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api, download } from "../api";
 import ExportDialog from "./ExportDialog.jsx";
+import { ZipZone } from "../ZipDrop.jsx";
+import { isZip, takeZip } from "../zipDrop.js";
 
 export default function Settings() {
   const [settings, setSettings] = useState(null);
@@ -9,6 +11,7 @@ export default function Settings() {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [exportOn, setExportOn] = useState(false);
+  const [zipName, setZipName] = useState("");
 
   async function refresh() {
     const [s, j] = await Promise.all([api.settings(), api.jobs()]);
@@ -43,6 +46,24 @@ export default function Settings() {
     await run(`Using ${llm_provider}.`, () => api.saveSettings({ llm_provider }));
   }
 
+  async function uploadZip(file) {
+    if (!isZip(file)) {
+      setErr("Drop a .zip inbox bundle.");
+      setMsg("");
+      return;
+    }
+    setZipName(file.name);
+    const out = await run(`Loading ${file.name}…`, () => api.upload(file));
+    if (out) {
+      setMsg(`${file.name} is loaded. Job #${out.job.id} is classifying ${out.count} emails with ${out.job.provider}.`);
+    }
+  }
+
+  useEffect(() => {
+    const file = takeZip();
+    if (file) uploadZip(file);
+  }, []);
+
   return (
     <div>
       <div className="header"><h1>Settings</h1></div>
@@ -51,7 +72,7 @@ export default function Settings() {
 
       <div className="panel" style={{ marginBottom: 16 }}>
         <h3>Model</h3>
-        <p className="muted">Cursor is for testing (large limit). Vertex Gemini is the production demo — a few live calls only. The seeded inbox does not spend Gemini quota.</p>
+        <p className="muted">Cursor handles a full inbox. Vertex is for a few live calls and will refuse a large zip.</p>
         <div className="btn-row">
           <button className={`btn ${settings?.llm_provider === "cursor" ? "primary" : ""}`}
                   onClick={() => saveProvider("cursor")}>Test — Cursor</button>
@@ -62,39 +83,14 @@ export default function Settings() {
 
       <div className="panel" style={{ marginBottom: 16 }}>
         <h3>Inbox source</h3>
-        <p className="muted">For a live Vertex check, click Process one email — Vertex. It loads a new SI+BL message, shows a job, then appears in Inbox as live_00N. The 520-email sample does not call Gemini.</p>
-        <div className="btn-row">
-        <button className="btn primary" onClick={async () => {
-          const out = await run("Loading sample…", () => api.seed());
-          if (out) setMsg(`Loaded ${out.loaded} emails from the sample inbox.`);
-        }}>Load sample dataset</button>
-        {" "}
-        <button className="btn" onClick={async () => {
-          const out = await run("Loading one email with attachments…", () => api.ingestOne());
-          if (out) {
-            setMsg(`Loaded ${out.email_id} (${(out.attachments || []).join(", ") || "no files"}). Open Inbox to preview.`);
-          }
-        }}>Load one email with attachments</button>
-        {" "}
-        <button className="btn" onClick={async () => {
-          const out = await run("Queueing Vertex on one email…", async () => {
-            await api.saveSettings({ llm_provider: "vertex" });
-            return api.processOne();
-          });
-          if (out) {
-            setMsg(`Job #${out.job.id} ${out.job.status} on ${out.email_id} (${out.category || "?"} / ${out.status || "?"}). Open Inbox.`);
-          }
-        }}>Process one email — Vertex</button>
-        {" "}
-        <label className="btn">
-          Upload zip
-          <input type="file" hidden accept=".zip" onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            const out = await run("Uploading zip…", () => api.upload(file));
-            if (out) setMsg(`Upload job #${out.job.id} queued (${out.count} emails).`);
-          }} />
-        </label>
+        <p className="muted">Drop a zip to load it and start classification. IMAP fetch does the same for a mailbox.</p>
+        <ZipZone onFile={uploadZip} />
+        {zipName && <p className="muted">Last zip: {zipName}</p>}
+        <div className="btn-row" style={{ marginTop: 12 }}>
+          <button className="btn" onClick={async () => {
+            const out = await run("Loading sample…", () => api.seed());
+            if (out) setMsg(`Loaded ${out.loaded} emails from the sample inbox.`);
+          }}>Load sample dataset</button>
         </div>
         <div className="fields" style={{ marginTop: 16 }}>
           {["host", "port", "username", "password", "folder", "poll_seconds"].map((k) => (
