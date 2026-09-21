@@ -402,8 +402,22 @@ html[data-theme="light"] .line-bad {
   border-radius: 8px;
 }
 .extract-line b { color: var(--muted); font-weight: 500; }
-.inline-preview { padding: 4px 4px 8px; }
-.preview-row td { background: var(--bg); border-bottom: 1px solid var(--line); }
+.inline-preview { padding: 8px 10px 12px; }
+.preview-row td {
+  padding: 0;
+  background: var(--bg);
+  border-bottom: 0;
+}
+.preview-slide {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+.preview-slide.is-open { grid-template-rows: 1fr; }
+.preview-slide-inner { overflow: hidden; min-height: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .preview-slide { transition: none; }
+}
 tr.row-open { background: var(--hover); }
 
 .split {

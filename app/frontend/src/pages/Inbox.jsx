@@ -7,6 +7,37 @@ import Select from "../Select.jsx";
 import { HighlightText, mismatchNeedles } from "../docs.jsx";
 import { SortTh, emailNum, nextSort, sortRows } from "../sort.jsx";
 
+function SlidePreview({ open, id, onReview }) {
+  const [mounted, setMounted] = useState(open);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      const frame = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setShown(true));
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+    setShown(false);
+    const timer = setTimeout(() => setMounted(false), 280);
+    return () => clearTimeout(timer);
+  }, [open]);
+
+  if (!mounted) return null;
+  return (
+    <tr className="preview-row">
+      <td colSpan={7}>
+        <div className={`preview-slide${shown ? " is-open" : ""}`}>
+          <div className="preview-slide-inner">
+            <InboxPreview id={id} onReview={onReview} />
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 function InboxPreview({ id, onReview }) {
   const [doc, setDoc] = useState(null);
   const [err, setErr] = useState("");
@@ -72,7 +103,6 @@ export default function Inbox() {
   }
 
   const openId = params.get("open");
-  const colCount = 7;
   const shown = sortRows(rows, sort, (r, key) => {
     if (key === "num") return emailNum(r);
     if (key === "id") return r.email_id || "";
@@ -138,13 +168,11 @@ export default function Inbox() {
                     <span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span>
                   </td>
                 </tr>
-                {openId === r.email_id && (
-                  <tr className="preview-row">
-                    <td colSpan={colCount}>
-                      <InboxPreview id={r.email_id} onReview={() => nav(`/comparison?id=${r.email_id}`)} />
-                    </td>
-                  </tr>
-                )}
+                <SlidePreview
+                  open={openId === r.email_id}
+                  id={r.email_id}
+                  onReview={() => nav(`/comparison?id=${r.email_id}`)}
+                />
               </Fragment>
             ))}
           </tbody>
