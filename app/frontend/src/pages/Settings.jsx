@@ -20,11 +20,9 @@ export default function Settings() {
   useEffect(() => { refresh().catch((e) => setErr(e.message)); }, []);
 
   useEffect(() => {
-    const busy = jobs.some((j) => j.status === "queued" || j.status === "running");
-    if (!busy) return undefined;
     const t = setInterval(() => refresh().catch((e) => setErr(e.message)), 2000);
     return () => clearInterval(t);
-  }, [jobs]);
+  }, []);
 
   async function run(label, fn) {
     setErr("");
@@ -64,7 +62,7 @@ export default function Settings() {
 
       <div className="panel" style={{ marginBottom: 16 }}>
         <h3>Inbox source</h3>
-        <p className="muted">Load the 520-email sample (Flash 1.00 labels, no live model), upload a hackathon zip, or fetch a mail server over IMAP.</p>
+        <p className="muted">For a live Vertex check, click Process one email — Vertex. It loads a new SI+BL message, shows a job, then appears in Inbox as live_00N. The 520-email sample does not call Gemini.</p>
         <div className="btn-row">
         <button className="btn primary" onClick={async () => {
           const out = await run("Loading sample…", () => api.seed());
@@ -83,7 +81,9 @@ export default function Settings() {
             await api.saveSettings({ llm_provider: "vertex" });
             return api.processOne();
           });
-          if (out) setMsg(`Job #${out.job.id} processing ${out.email_id} with ${out.provider}.`);
+          if (out) {
+            setMsg(`Job #${out.job.id} ${out.job.status} on ${out.email_id} (${out.category || "?"} / ${out.status || "?"}). Open Inbox.`);
+          }
         }}>Process one email — Vertex</button>
         {" "}
         <label className="btn">
@@ -97,7 +97,7 @@ export default function Settings() {
         </label>
         </div>
         <div className="fields" style={{ marginTop: 16 }}>
-          {["host", "port", "username", "password", "folder"].map((k) => (
+          {["host", "port", "username", "password", "folder", "poll_seconds"].map((k) => (
             <div className="field-box" key={k}>
               <b>{k}</b>
               <input type={k === "password" ? "password" : "text"}
@@ -126,7 +126,7 @@ export default function Settings() {
             if (out) setMsg(`IMAP job #${out.job.id} fetching ${out.count} messages.`);
           }}>Fetch now</button>
         </div>
-        <p className="muted">Last sync: {settings?.imap?.last_sync || "never"} · {settings?.imap?.status}</p>
+        <p className="muted">Last sync: {settings?.imap?.last_sync || "never"} · {settings?.imap?.status}. Poll seconds 0 = Fetch now only. 60+ = pick up new mail while this process is awake. Cloud Run sleeps when idle unless you add a Cloud Scheduler ping to /api/cron/imap.</p>
       </div>
 
       <div className="panel" style={{ marginBottom: 16 }}>

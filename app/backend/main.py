@@ -4,6 +4,8 @@ import hashlib
 import hmac
 import json
 import threading
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -16,6 +18,7 @@ from pydantic import BaseModel
 from config import (
     CATEGORY_META,
     COMPARE_FIELDS,
+    CRON_SECRET,
     DATA_V2,
     DEMO_EMAIL,
     DEMO_PASSWORD,
@@ -38,11 +41,11 @@ from exports import (
 from ingest import fetch_imap, ingest_zip
 from llm import classify, guard_vertex_batch
 from seed import (
-    LIVE_EMAIL_ID,
     build_record,
     load_attachment,
     load_flash_score,
     load_one_attached,
+    next_live_id,
     seed_sample,
 )
 from store import Store, public_email
@@ -370,22 +373,43 @@ def imap_test(authorization: Optional[str] = Header(None)):
         raise HTTPException(400, str(exc))
 
 
+def _ingest_imap_new(limit: int = 15, sync: bool = True) -> dict:
+    cfg = store.settings()["imap"]
+    root, emails = fetch_imap(cfg, limit=limit)
+    fresh = [e for e in emails if not store.get_email(e["email_id"])]
+    store.set_imap_status("connected", datetime.now(timezone.utc).isoformat())
+    if not fresh:
+        return {"job": None, "count": 0}
+    provider = store.settings()["llm_provider"]
+    job = store.add_job("imap", provider, len(fresh))
+    if sync:
+        _run_ingest(job["id"], root, fresh, "imap", provider)
+        jobs = [j for j in store.jobs() if j["id"] == job["id"]]
+        return {"job": jobs[0] if jobs else job, "count": len(fresh)}
+    threading.Thread(target=_run_ingest, args=(job["id"], root, fresh, "imap", provider),
+                     daemon=True).start()
+    return {"job": job, "count": len(fresh)}
+
+
 @app.post("/api/ingest/imap/fetch")
 def imap_fetch(body: ImapBody, authorization: Optional[str] = Header(None)):
     require_auth(authorization)
-    cfg = store.settings()["imap"]
     try:
-        root, emails = fetch_imap(cfg, limit=body.limit)
+        return _ingest_imap_new(limit=body.limit, sync=True)
     except Exception as exc:
         store.set_imap_status("error")
         raise HTTPException(400, str(exc))
-    provider = store.settings()["llm_provider"]
-    job = store.add_job("imap", provider, len(emails))
-    from datetime import datetime, timezone
-    store.set_imap_status("connected", datetime.now(timezone.utc).isoformat())
-    threading.Thread(target=_run_ingest, args=(job["id"], root, emails, "imap", provider),
-                     daemon=True).start()
-    return {"job": job, "count": len(emails)}
+
+
+@app.post("/api/cron/imap")
+def cron_imap(x_cron_secret: Optional[str] = Header(None)):
+    if not CRON_SECRET or x_cron_secret != CRON_SECRET:
+        raise HTTPException(401, "bad cron secret")
+    try:
+        return _ingest_imap_new(limit=15, sync=True)
+    except Exception as exc:
+        store.set_imap_status("error")
+        raise HTTPException(400, str(exc))
 
 
 @app.post("/api/ingest/one")
@@ -405,17 +429,22 @@ def ingest_one(authorization: Optional[str] = Header(None)):
 def process_one(authorization: Optional[str] = Header(None)):
     require_auth(authorization)
     provider = store.settings()["llm_provider"]
-    rec = store.get_email(LIVE_EMAIL_ID)
-    if not rec:
-        rec = load_one_attached(store)
     try:
         guard_vertex_batch(provider, 1)
     except RuntimeError as exc:
         raise HTTPException(400, str(exc))
+    rec = load_one_attached(store, next_live_id(store))
     job = store.add_job("process", provider, 1)
-    threading.Thread(target=_run_process, args=(job["id"], [rec["email_id"]], provider),
-                     daemon=True).start()
-    return {"job": job, "email_id": rec["email_id"], "provider": provider}
+    _run_process(job["id"], [rec["email_id"]], provider)
+    rec = store.get_email(rec["email_id"]) or rec
+    jobs = [j for j in store.jobs() if j["id"] == job["id"]]
+    return {
+        "job": jobs[0] if jobs else job,
+        "email_id": rec["email_id"],
+        "provider": provider,
+        "category": rec.get("category"),
+        "status": rec.get("status"),
+    }
 
 
 @app.post("/api/process")
@@ -581,9 +610,26 @@ def _run_process(job_id: int, ids: list[str], provider: str):
     store.update_job(job_id, status="done" if not failed else "failed", done=done, failed=failed)
 
 
+def _imap_poll_loop():
+    while True:
+        try:
+            secs = int(store.settings().get("imap", {}).get("poll_seconds") or 0)
+        except Exception:
+            secs = 0
+        if secs < 30:
+            time.sleep(10)
+            continue
+        try:
+            _ingest_imap_new(limit=15, sync=True)
+        except Exception:
+            store.set_imap_status("error")
+        time.sleep(secs)
+
+
 @app.on_event("startup")
 def startup():
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    threading.Thread(target=_imap_poll_loop, daemon=True).start()
 
 
 FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"

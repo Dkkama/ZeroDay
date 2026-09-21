@@ -78,7 +78,15 @@ LIVE_EMAIL_ID = "live_001"
 LIVE_SOURCE_EMAIL = "email_004"
 
 
-def load_one_attached(store: Store, email_id: str = LIVE_EMAIL_ID) -> dict:
+def next_live_id(store: Store) -> str:
+    n = 1
+    while store.get_email(f"live_{n:03d}"):
+        n += 1
+    return f"live_{n:03d}"
+
+
+def load_one_attached(store: Store, email_id: str | None = None) -> dict:
+    email_id = email_id or next_live_id(store)
     path = DATA_V2 / "inbox" / f"{LIVE_SOURCE_EMAIL}.json"
     if not path.exists():
         raise FileNotFoundError(f"sample {LIVE_SOURCE_EMAIL} missing at {path}")
