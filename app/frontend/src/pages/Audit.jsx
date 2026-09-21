@@ -14,7 +14,7 @@ export default function Audit() {
 
   async function exp() {
     try {
-      await download("audit", { fmt, limit }, `audit.${fmt === "pdf" ? "txt" : fmt}`);
+      await download("audit", { fmt, limit }, `audit.${fmt}`);
       setExportOn(false);
     } catch (e) {
       setErr(e.message);
@@ -62,7 +62,8 @@ export default function Audit() {
               <option value="csv">CSV</option>
               <option value="json">JSON</option>
               <option value="xlsx">XLSX</option>
-              <option value="pdf">PDF / text</option>
+              <option value="pdf">PDF</option>
+              <option value="txt">TXT</option>
             </select>
             <div style={{ height: 16 }} />
             <button className="btn primary" onClick={exp}>Download</button>

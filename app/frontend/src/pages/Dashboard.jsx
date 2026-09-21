@@ -109,7 +109,6 @@ export default function Dashboard() {
                 labelStyle={tipLabel}
                 formatter={(value) => [`${value} emails (${((value / total) * 100).toFixed(1)}%)`, "Count"]}
               />
-              <Legend />
               <Bar dataKey="value" name="Emails" radius={[8, 8, 0, 0]}>
                 {catData.map((c) => <Cell key={c.key} fill={COLORS[c.key]} />)}
               </Bar>

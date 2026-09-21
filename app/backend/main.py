@@ -25,6 +25,7 @@ from config import (
 from exports import (
     audit_to_csv,
     audit_to_pdf,
+    audit_to_txt,
     filter_emails,
     preset_spec,
     results_rows,
@@ -476,7 +477,10 @@ def export_audit(
         ]), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": "attachment; filename=audit.xlsx"})
     if fmt == "pdf":
-        return Response(audit_to_pdf(rows), media_type="text/plain",
+        return Response(audit_to_pdf(rows), media_type="application/pdf",
+                        headers={"Content-Disposition": "attachment; filename=audit.pdf"})
+    if fmt == "txt":
+        return Response(audit_to_txt(rows), media_type="text/plain",
                         headers={"Content-Disposition": "attachment; filename=audit.txt"})
     return rows
 
