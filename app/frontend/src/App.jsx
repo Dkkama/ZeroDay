@@ -15,14 +15,17 @@ const NAV = [
   { to: "/audit", label: "Audit log" },
 ];
 
-function Sidebar() {
+function Sidebar({ open, onToggle }) {
   const loc = useLocation();
   const nav = useNavigate();
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${open ? "" : " is-hidden"}`} aria-hidden={!open}>
       <div className="brand">
         <b>ZERODAY</b>
         <span>Shipping document desk</span>
+        <button className="sidebar-hide" type="button" onClick={onToggle} aria-label="Hide sidebar">
+          Hide
+        </button>
       </div>
       <nav className="nav">
         {NAV.map((item) => (
@@ -47,15 +50,30 @@ function Sidebar() {
 
 function Guard({ children }) {
   const [ok, setOk] = useState(Boolean(token()));
+  const [navOpen, setNavOpen] = useState(() => localStorage.getItem("zd-sidebar") !== "0");
   useEffect(() => {
     if (!token()) return;
     api.me().then(() => setOk(true)).catch(() => setOk(false));
   }, []);
+  function toggleNav() {
+    setNavOpen((cur) => {
+      const next = !cur;
+      localStorage.setItem("zd-sidebar", next ? "1" : "0");
+      return next;
+    });
+  }
   if (!token() || !ok) return <Navigate to="/login" replace />;
   return (
-    <div className="shell">
-      <Sidebar />
-      <main className="page">{children}</main>
+    <div className={`shell${navOpen ? "" : " nav-hidden"}`}>
+      <Sidebar open={navOpen} onToggle={toggleNav} />
+      <main className="page">
+        {!navOpen && (
+          <button className="sidebar-show" type="button" onClick={toggleNav} aria-label="Show sidebar">
+            Menu
+          </button>
+        )}
+        {children}
+      </main>
     </div>
   );
 }

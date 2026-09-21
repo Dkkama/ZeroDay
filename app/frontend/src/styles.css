@@ -79,7 +79,24 @@ a { color: inherit; }
 }
 .brand { padding: 8px 10px 24px; }
 .brand b { display: block; font-size: 32px; letter-spacing: 0.04em; }
-.brand span { color: var(--muted); font-size: 15px; }
+.brand span { color: var(--muted); font-size: 15px; display: block; margin-bottom: 10px; }
+.sidebar-hide, .sidebar-show {
+  background: #24313a;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 14px;
+}
+.sidebar-show { margin-bottom: 16px; }
+.sidebar.is-hidden {
+  width: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
 .nav a, .nav button.navlink {
   display: block;
   width: 100%;
