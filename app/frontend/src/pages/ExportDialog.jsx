@@ -72,13 +72,13 @@ export default function ExportDialog({ onClose }) {
           ))}
         </div>
         <label className="muted">Human-validated</label>
-        <select value={validated} onChange={(e) => setValidated(e.target.value)}>
+        <select className="dark-select" value={validated} onChange={(e) => setValidated(e.target.value)}>
           <option value="">Any</option>
           <option value="yes">Only validated</option>
           <option value="no">Not yet validated</option>
         </select>
         <div style={{ height: 10 }} />
-        <select value={fmt} onChange={(e) => setFmt(e.target.value)}>
+        <select className="dark-select" value={fmt} onChange={(e) => setFmt(e.target.value)}>
           <option value="csv">CSV</option>
           <option value="json">JSON</option>
           <option value="xlsx">XLSX</option>

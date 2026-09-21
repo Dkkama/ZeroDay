@@ -162,7 +162,7 @@ def stats(authorization: Optional[str] = Header(None)):
             reasons[rec["review_reason"]] = reasons.get(rec["review_reason"], 0) + 1
     queue = [r for r in rows if r.get("category") == "BL_COMPARISON"
              and r.get("status") in ("NEEDS_REVIEW", "MISMATCH")
-             and not r.get("human_validated")]
+             and not r.get("human_validated") and not r.get("fixed")]
     return {
         "total": len(rows),
         "by_category": by_cat,
@@ -187,9 +187,12 @@ def list_emails(
     if queue:
         rows = [r for r in rows
                 if r.get("category") == "BL_COMPARISON"
-                and r.get("status") in ("NEEDS_REVIEW", "MISMATCH")
-                and not r.get("human_validated")]
-        rows.sort(key=lambda r: (0 if r.get("status") == "NEEDS_REVIEW" else 1, r.get("email_id")))
+                and (r.get("status") in ("NEEDS_REVIEW", "MISMATCH") or r.get("fixed"))]
+        rows.sort(key=lambda r: (
+            1 if r.get("human_validated") or r.get("fixed") else 0,
+            0 if r.get("status") == "NEEDS_REVIEW" else 1,
+            r.get("email_id") or "",
+        ))
     if category:
         rows = [r for r in rows if r.get("category") == category]
     if status:
@@ -223,21 +226,55 @@ def get_attachment(email_id: str, filename: str,
         if att.get("filename") == filename:
             path = Path(att.get("abs") or "")
             if path.exists():
-                return FileResponse(path, filename=filename)
+                return FileResponse(
+                    path,
+                    filename=filename,
+                    content_disposition_type="inline",
+                )
             text = att.get("text") or ""
             return Response(text.encode("utf-8"), media_type="text/plain")
+    raise HTTPException(404, "attachment not found")
+
+
+@app.get("/api/emails/{email_id}/attachments/{filename}/sheet")
+def get_sheet(email_id: str, filename: str,
+              authorization: Optional[str] = Header(None)):
+    require_auth(authorization)
+    rec = store.get_email(email_id)
+    if not rec:
+        raise HTTPException(404, "email not found")
+    for att in rec.get("attachments") or []:
+        if att.get("filename") != filename:
+            continue
+        path = Path(att.get("abs") or "")
+        if not path.exists():
+            raise HTTPException(404, "file missing")
+        from openpyxl import load_workbook
+        wb = load_workbook(path, data_only=True, read_only=True)
+        sheets = []
+        for ws in wb.worksheets:
+            rows = []
+            for row in ws.iter_rows(values_only=True):
+                rows.append(["" if c is None else str(c) for c in row])
+            sheets.append({"name": ws.title, "rows": rows})
+        wb.close()
+        return {"filename": filename, "sheets": sheets}
     raise HTTPException(404, "attachment not found")
 
 
 @app.post("/api/emails/{email_id}/validate")
 def validate(email_id: str, authorization: Optional[str] = Header(None)):
     require_auth(authorization)
+    current = store.get_email(email_id)
+    if not current:
+        raise HTTPException(404, "email not found")
+    was_mismatch = current.get("status") == "MISMATCH"
     rec = store.update_email(
         email_id,
-        {"human_validated": True},
+        {"human_validated": True, "fixed": was_mismatch or current.get("fixed", False)},
         actor="human",
         change_type="validated BL / resolved fields",
-        details={"human_validated": True},
+        details={"human_validated": True, "fixed": was_mismatch},
     )
     return public_email(rec)
 

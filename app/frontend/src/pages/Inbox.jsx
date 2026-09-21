@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import ExportDialog from "./ExportDialog.jsx";
+import { statusClass, statusLabel } from "../status";
 
 export default function Inbox() {
   const nav = useNavigate();
@@ -75,7 +76,7 @@ export default function Inbox() {
               <td>{r.subject}</td>
               <td>{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
               <td><span className={`chip ${r.category}`}>{r.category}</span></td>
-              <td><span className={`chip ${r.status}`}>{r.status}</span></td>
+              <td><span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span></td>
             </tr>
           ))}
         </tbody>

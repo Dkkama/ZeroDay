@@ -23,12 +23,12 @@ export default function Audit() {
     <div>
       <div className="header">
         <h1>Audit log</h1>
-        <select value={limit} onChange={(e) => setLimit(e.target.value)}>
+        <select className="dark-select" value={limit} onChange={(e) => setLimit(e.target.value)}>
           <option value="50">50 changes</option>
           <option value="200">200 changes</option>
           <option value="500">500 changes</option>
         </select>
-        <select value={fmt} onChange={(e) => setFmt(e.target.value)}>
+        <select className="dark-select" value={fmt} onChange={(e) => setFmt(e.target.value)}>
           <option value="csv">CSV</option>
           <option value="json">JSON</option>
           <option value="xlsx">XLSX</option>

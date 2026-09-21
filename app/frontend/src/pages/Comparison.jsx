@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import FilePreview from "./FilePreview.jsx";
+import { statusClass, statusLabel } from "../status";
 
 const LABELS = {
   shipper: "Shipper",
@@ -33,6 +34,7 @@ export default function Comparison() {
 
   useEffect(() => {
     if (!id) { setDoc(null); return; }
+    setDoc(null);
     api.email(id).then(setDoc).catch((e) => setErr(e.message));
   }, [id]);
 
@@ -79,7 +81,11 @@ export default function Comparison() {
                 <td>{i + 1}</td>
                 <td>{r.subject || r.email_id}</td>
                 <td>{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
-                <td>{r.review_reason || (r.defect_fields || []).join(", ") || r.status}</td>
+                <td>
+                  <span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span>
+                  {" "}
+                  {r.review_reason || (r.defect_fields || []).join(", ")}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -88,7 +94,7 @@ export default function Comparison() {
     );
   }
 
-  if (!doc) return <p className="muted">Opening {id}…</p>;
+  if (!doc || doc.email_id !== id) return <p className="muted">Opening {id}…</p>;
   const si = (doc.attachments || []).find((a) => a.kind === "si");
   const bl = (doc.attachments || []).find((a) => a.kind === "bl");
 
@@ -102,11 +108,11 @@ export default function Comparison() {
         <button className="btn" onClick={() => setEditing((v) => !v)}>{editing ? "Done" : "Edit"}</button>
         <button className="btn primary" onClick={validate}>Validate</button>
       </div>
-      <p className="muted">{doc.email_id} · {doc.subject} · {doc.review_reason || doc.status}</p>
+      <p className="muted">{doc.email_id} · {doc.subject} · {statusLabel(doc)} · {doc.review_reason || (doc.defect_fields || []).join(", ")}</p>
 
-      <div className="fields">
+      <div className="fields" key={doc.email_id}>
         {(doc.field_view || []).map((f) => (
-          <div className="field-box" key={f.name}>
+          <div className="field-box" key={`${doc.email_id}-${f.name}`}>
             <b>{LABELS[f.name] || f.name}</b>
             {f.empty ? (
               <input
@@ -153,11 +159,11 @@ export default function Comparison() {
       <div className="split">
         <div>
           <h3>SI original — {si?.filename || "none"}</h3>
-          <FilePreview emailId={doc.email_id} att={si || (doc.attachments || [])[0]} />
+          <FilePreview key={`${doc.email_id}-si`} emailId={doc.email_id} att={si || (doc.attachments || [])[0]} />
         </div>
         <div>
           <h3>BL original — {bl?.filename || "none"}</h3>
-          <FilePreview emailId={doc.email_id} att={bl || (doc.attachments || [])[1]} />
+          <FilePreview key={`${doc.email_id}-bl`} emailId={doc.email_id} att={bl || (doc.attachments || [])[1]} />
         </div>
       </div>
     </div>

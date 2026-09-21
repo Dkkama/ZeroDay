@@ -209,7 +209,7 @@ def public_email(rec: dict, include_text: bool = False) -> dict:
     out = {k: rec.get(k) for k in (
         "email_id", "from", "subject", "body", "caught_at", "source",
         "category", "status", "review_reason", "has_defect", "defect_fields",
-        "si_fields", "bl_fields", "resolved_fields", "human_validated",
+        "si_fields", "bl_fields", "resolved_fields", "human_validated", "fixed",
         "updated_at", "attachments",
     )}
     if not include_text:
