@@ -1,10 +1,50 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import ExportDialog from "./ExportDialog.jsx";
 import { statusClass, statusLabel } from "../status";
 import Select from "../Select.jsx";
-import { SortTh, emailNum, nextSort, rowOpen, sortRows } from "../sort.jsx";
+import { HighlightText, mismatchNeedles } from "../docs.jsx";
+import { SortTh, emailNum, nextSort, sortRows } from "../sort.jsx";
+
+function InboxPreview({ id, onReview }) {
+  const [doc, setDoc] = useState(null);
+  const [err, setErr] = useState("");
+
+  useEffect(() => {
+    setDoc(null);
+    setErr("");
+    api.email(id).then(setDoc).catch((e) => setErr(e.message));
+  }, [id]);
+
+  if (err) return <div className="error">{err}</div>;
+  if (!doc) return <p className="muted">Opening…</p>;
+  const needles = mismatchNeedles(doc.si_fields, doc.bl_fields);
+  const si = (doc.attachments || []).find((a) => a.kind === "si");
+  const bl = (doc.attachments || []).find((a) => a.kind === "bl");
+
+  return (
+    <div className="inline-preview">
+      <p className="muted">{doc.from} · {(doc.caught_at || "").slice(0, 16).replace("T", " ")}</p>
+      {doc.body ? <HighlightText text={doc.body} /> : null}
+      {(si?.text || bl?.text) && (
+        <div className="split">
+          <div>
+            <h3>SI — {si?.filename || "none"}</h3>
+            <HighlightText text={si?.text || ""} needles={needles} />
+          </div>
+          <div>
+            <h3>BL — {bl?.filename || "none"}</h3>
+            <HighlightText text={bl?.text || ""} needles={needles} />
+          </div>
+        </div>
+      )}
+      {doc.category === "BL_COMPARISON" && (
+        <button className="btn" type="button" onClick={onReview}>Open in review</button>
+      )}
+    </div>
+  );
+}
 
 export default function Inbox() {
   const nav = useNavigate();
@@ -25,13 +65,14 @@ export default function Inbox() {
     api.emails(query).then(setRows).catch((e) => setErr(e.message));
   }, [q, category, status]);
 
-  function open(row) {
-    if (row.category === "BL_COMPARISON") nav(`/comparison?id=${row.email_id}`);
-    else nav(`/inbox?open=${row.email_id}&category=${category}`);
+  function toggle(row) {
+    const next = { q, category, status };
+    if (params.get("open") !== row.email_id) next.open = row.email_id;
+    setParams(next);
   }
 
   const openId = params.get("open");
-  const openRow = rows.find((r) => r.email_id === openId);
+  const colCount = 7;
   const shown = sortRows(rows, sort, (r, key) => {
     if (key === "num") return emailNum(r);
     if (key === "id") return r.email_id || "";
@@ -69,13 +110,6 @@ export default function Inbox() {
         </Select>
       </div>
       {err && <div className="error">{err}</div>}
-      {openRow && openRow.category !== "BL_COMPARISON" && (
-        <div className="panel" style={{ marginBottom: 16 }}>
-          <h3>{openRow.subject}</h3>
-          <p className="muted">{openRow.from} · {openRow.caught_at}</p>
-          <pre className="pre">{openRow.body}</pre>
-        </div>
-      )}
       <div className="table-scroll">
         <table>
           <thead>
@@ -91,18 +125,27 @@ export default function Inbox() {
           </thead>
           <tbody>
             {shown.map((r) => (
-              <tr key={r.email_id} className="row" {...rowOpen(() => open(r))}>
-                <td className="col-num">{emailNum(r)}</td>
-                <td className="hide-sm">{r.email_id}</td>
-                <td className="col-subject">{r.subject}</td>
-                <td className="hide-sm">{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
-                <td className="col-chip hide-sm"><span className={`chip ${r.category}`}>{r.category}</span></td>
-                <td className="col-chip hide-sm"><span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span></td>
-                <td className="col-meta show-sm">
-                  <span className={`chip ${r.category}`}>{r.category}</span>
-                  <span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span>
-                </td>
-              </tr>
+              <Fragment key={r.email_id}>
+                <tr className={`row${openId === r.email_id ? " row-open" : ""}`} onClick={() => toggle(r)}>
+                  <td className="col-num">{emailNum(r)}</td>
+                  <td className="hide-sm">{r.email_id}</td>
+                  <td className="col-subject">{r.subject}</td>
+                  <td className="hide-sm">{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
+                  <td className="col-chip hide-sm"><span className={`chip ${r.category}`}>{r.category}</span></td>
+                  <td className="col-chip hide-sm"><span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span></td>
+                  <td className="col-meta show-sm">
+                    <span className={`chip ${r.category}`}>{r.category}</span>
+                    <span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span>
+                  </td>
+                </tr>
+                {openId === r.email_id && (
+                  <tr className="preview-row">
+                    <td colSpan={colCount}>
+                      <InboxPreview id={r.email_id} onReview={() => nav(`/comparison?id=${r.email_id}`)} />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>
