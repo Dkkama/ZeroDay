@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api, setToken, token } from "./api";
 import Login from "./pages/Login.jsx";
@@ -23,10 +23,12 @@ function isMobileNav() {
   return window.matchMedia("(max-width: 820px)").matches;
 }
 
-function Sidebar({ open, onToggle, onGo }) {
+function Sidebar({ open, onToggle, onGo, mobile }) {
   const loc = useLocation();
   return (
-    <aside className={`sidebar${open ? "" : " is-collapsed"}`} aria-expanded={open}>
+    <aside className={`sidebar${open ? "" : " is-collapsed"}`} aria-expanded={open}
+           aria-hidden={mobile && !open}
+           {...(mobile && !open ? { inert: true } : {})}>
       <div className="brand">
         <button className="sidebar-burger" type="button" onClick={onToggle}
                 aria-label={open ? "Collapse sidebar" : "Expand sidebar"} title={open ? "Collapse" : "Expand"}>
@@ -63,13 +65,23 @@ function Sidebar({ open, onToggle, onGo }) {
   );
 }
 
-function Guard({ children }) {
+function Guard() {
   const nav = useNavigate();
   const [ok, setOk] = useState(Boolean(token()));
+  const [mobile, setMobile] = useState(() => isMobileNav());
   const [navOpen, setNavOpen] = useState(() => !isMobileNav() && localStorage.getItem("zd-sidebar") !== "0");
   useEffect(() => {
     if (!token()) return;
     api.me().then(() => setOk(true)).catch(() => setOk(false));
+  }, []);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 820px)");
+    const onChange = () => {
+      setMobile(mq.matches);
+      if (mq.matches) setNavOpen(false);
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
   }, []);
   function setNav(next) {
     setNavOpen(next);
@@ -87,8 +99,20 @@ function Guard({ children }) {
   return (
     <div className={`shell${navOpen ? "" : " nav-hidden"}`}>
       {navOpen && <button className="nav-scrim" type="button" aria-label="Close menu" onClick={toggleNav} />}
-      <Sidebar open={navOpen} onToggle={toggleNav} onGo={go} />
-      <main className="page">{children}</main>
+      <Sidebar open={navOpen} onToggle={toggleNav} onGo={go} mobile={mobile} />
+      <div className="main-col">
+        <header className="mobile-bar">
+          <button className="sidebar-burger" type="button" onClick={toggleNav}
+                  aria-label={navOpen ? "Close menu" : "Open menu"} title="Menu">
+            <IconBurger />
+          </button>
+          <div className="mobile-brand">
+            <b>ZERODAY</b>
+            <span>Document desk</span>
+          </div>
+        </header>
+        <main className="page"><Outlet /></main>
+      </div>
     </div>
   );
 }
@@ -99,11 +123,13 @@ export default function App() {
     <A11yControl />
     <Routes>
       <Route path="/login" element={<Login />} />
-      <Route path="/" element={<Guard><Dashboard /></Guard>} />
-      <Route path="/inbox" element={<Guard><Inbox /></Guard>} />
-      <Route path="/comparison" element={<Guard><Comparison /></Guard>} />
-      <Route path="/audit" element={<Guard><Audit /></Guard>} />
-      <Route path="/settings" element={<Guard><Settings /></Guard>} />
+      <Route element={<Guard />}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/inbox" element={<Inbox />} />
+        <Route path="/comparison" element={<Comparison />} />
+        <Route path="/audit" element={<Audit />} />
+        <Route path="/settings" element={<Settings />} />
+      </Route>
     </Routes>
     </>
   );
