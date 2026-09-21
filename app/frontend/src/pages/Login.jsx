@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, setToken } from "../api";
+import FileConstellation from "../FileConstellation.jsx";
 
 export default function Login() {
   const nav = useNavigate();
@@ -22,6 +23,7 @@ export default function Login() {
 
   return (
     <div className="login">
+      <FileConstellation />
       <form className="login-card" onSubmit={submit}>
         <h1>ZeroDay</h1>
         <p>Sign in to the shipping document desk. SI is the source of truth; a draft BL is checked against it.</p>
