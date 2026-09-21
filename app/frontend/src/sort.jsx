@@ -21,10 +21,19 @@ export function sortRows(rows, sort, valueOf) {
   });
 }
 
-export function SortTh({ label, col, sort, onSort }) {
+export function rowOpen(open) {
+  return {
+    onClick: () => {
+      if (window.matchMedia("(max-width: 820px)").matches) open();
+    },
+    onDoubleClick: () => open(),
+  };
+}
+
+export function SortTh({ label, col, sort, onSort, className = "" }) {
   const on = sort.key === col;
   return (
-    <th className={`sort-th${on ? " sort-on" : ""}`} onClick={() => onSort(col)}>
+    <th className={`sort-th${on ? " sort-on" : ""}${className ? ` ${className}` : ""}`} onClick={() => onSort(col)}>
       {label}
       {on ? (sort.dir === "asc" ? " ↑" : " ↓") : ""}
     </th>

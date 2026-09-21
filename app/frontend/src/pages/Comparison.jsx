@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import FilePreview from "./FilePreview.jsx";
 import { statusClass, statusLabel } from "../status";
-import { SortTh, emailNum, nextSort, sortRows } from "../sort.jsx";
+import { SortTh, emailNum, nextSort, rowOpen, sortRows } from "../sort.jsx";
 
 const LABELS = {
   shipper: "Shipper",
@@ -71,38 +71,40 @@ export default function Comparison() {
     return (
       <div>
         <div className="header"><h1>Review requests</h1></div>
-        <p className="muted">Double-click a row. These are draft BLs the algorithm cannot close on its own.</p>
+        <p className="muted">Open a row to review. On a phone, tap; on a desktop, double-click.</p>
         {err && <div className="error">{err}</div>}
-        <table>
-          <thead>
-            <tr>
-              <SortTh label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh label="File / subject" col="subject" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh label="Date caught" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-              <SortTh label="Reason" col="reason" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-            </tr>
-          </thead>
-          <tbody>
-            {sortRows(queue, sort, (r, key) => {
-              if (key === "num") return emailNum(r.email_id);
-              if (key === "subject") return r.subject || r.email_id || "";
-              if (key === "date") return r.caught_at || "";
-              if (key === "reason") return `${statusLabel(r)} ${r.review_reason || (r.defect_fields || []).join(", ")}`;
-              return "";
-            }).map((r) => (
-              <tr key={r.email_id} className="row" onDoubleClick={() => open(r)}>
-                <td>{emailNum(r.email_id)}</td>
-                <td>{r.subject || r.email_id}</td>
-                <td>{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
-                <td>
-                  <span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span>
-                  {" "}
-                  {r.review_reason || (r.defect_fields || []).join(", ")}
-                </td>
+        <div className="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <SortTh label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+                <SortTh label="File / subject" col="subject" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+                <SortTh className="hide-sm" label="Date caught" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+                <SortTh label="Reason" col="reason" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sortRows(queue, sort, (r, key) => {
+                if (key === "num") return emailNum(r.email_id);
+                if (key === "subject") return r.subject || r.email_id || "";
+                if (key === "date") return r.caught_at || "";
+                if (key === "reason") return `${statusLabel(r)} ${r.review_reason || (r.defect_fields || []).join(", ")}`;
+                return "";
+              }).map((r) => (
+                <tr key={r.email_id} className="row" {...rowOpen(() => open(r))}>
+                  <td>{emailNum(r.email_id)}</td>
+                  <td>{r.subject || r.email_id}</td>
+                  <td className="hide-sm">{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
+                  <td>
+                    <span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span>
+                    {" "}
+                    {r.review_reason || (r.defect_fields || []).join(", ")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
@@ -115,11 +117,13 @@ export default function Comparison() {
     <div>
       <div className="header">
         <h1>Review requests</h1>
-        <button className="btn" onClick={() => { setParams({}); setDoc(null); }}>Back to list</button>
-        <button className="btn" onClick={() => go(-1)} disabled={idx() <= 0}>Previous</button>
-        <button className="btn" onClick={() => go(1)} disabled={idx() >= queue.length - 1}>Next</button>
-        <button className="btn" onClick={() => setEditing((v) => !v)}>{editing ? "Done" : "Edit"}</button>
-        <button className="btn primary" onClick={validate}>Validate</button>
+        <div className="header-actions">
+          <button className="btn" onClick={() => { setParams({}); setDoc(null); }}>Back to list</button>
+          <button className="btn" onClick={() => go(-1)} disabled={idx() <= 0}>Previous</button>
+          <button className="btn" onClick={() => go(1)} disabled={idx() >= queue.length - 1}>Next</button>
+          <button className="btn" onClick={() => setEditing((v) => !v)}>{editing ? "Done" : "Edit"}</button>
+          <button className="btn primary" onClick={validate}>Validate</button>
+        </div>
       </div>
       <p className="muted">{doc.email_id} · {doc.subject} · {statusLabel(doc)} · {doc.review_reason || (doc.defect_fields || []).join(", ")}</p>
 

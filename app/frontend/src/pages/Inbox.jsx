@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import ExportDialog from "./ExportDialog.jsx";
 import { statusClass, statusLabel } from "../status";
-import { SortTh, emailNum, nextSort, sortRows } from "../sort.jsx";
+import { SortTh, emailNum, nextSort, rowOpen, sortRows } from "../sort.jsx";
 
 export default function Inbox() {
   const nav = useNavigate();
@@ -45,7 +45,9 @@ export default function Inbox() {
     <div>
       <div className="header">
         <h1>Inbox</h1>
-        <button className="btn" onClick={() => setExportOn(true)}>Export results</button>
+        <div className="header-actions">
+          <button className="btn" onClick={() => setExportOn(true)}>Export results</button>
+        </div>
       </div>
       <div className="toolbar">
         <input placeholder="Search subject, id, sender" value={q}
@@ -73,30 +75,32 @@ export default function Inbox() {
           <pre className="pre">{openRow.body}</pre>
         </div>
       )}
-      <table>
-        <thead>
-          <tr>
-            <SortTh label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-            <SortTh label="Id" col="id" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-            <SortTh label="Subject" col="subject" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-            <SortTh label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-            <SortTh label="Category" col="category" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-            <SortTh label="Status" col="status" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-          </tr>
-        </thead>
-        <tbody>
-          {shown.map((r) => (
-            <tr key={r.email_id} className="row" onDoubleClick={() => open(r)}>
-              <td>{emailNum(r.email_id)}</td>
-              <td>{r.email_id}</td>
-              <td>{r.subject}</td>
-              <td>{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
-              <td><span className={`chip ${r.category}`}>{r.category}</span></td>
-              <td><span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span></td>
+      <div className="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <SortTh label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="hide-sm" label="Id" col="id" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh label="Subject" col="subject" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="hide-sm" label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="hide-sm" label="Category" col="category" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh label="Status" col="status" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {shown.map((r) => (
+              <tr key={r.email_id} className="row" {...rowOpen(() => open(r))}>
+                <td>{emailNum(r.email_id)}</td>
+                <td className="hide-sm">{r.email_id}</td>
+                <td>{r.subject}</td>
+                <td className="hide-sm">{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
+                <td className="hide-sm"><span className={`chip ${r.category}`}>{r.category}</span></td>
+                <td><span className={`chip ${statusClass(r)}`}>{statusLabel(r)}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {exportOn && <ExportDialog onClose={() => setExportOn(false)} />}
     </div>
   );

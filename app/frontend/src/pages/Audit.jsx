@@ -39,41 +39,45 @@ export default function Audit() {
     <div>
       <div className="header">
         <h1>Audit log</h1>
-        <button className="btn primary" onClick={() => setExportOn(true)}>Export the report</button>
+        <div className="header-actions">
+          <button className="btn primary" onClick={() => setExportOn(true)}>Export the report</button>
+        </div>
       </div>
       {err && <div className="error">{err}</div>}
-      <table>
-        <thead>
-          <tr>
-            <SortTh label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-            <SortTh label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-            <SortTh label="Actor" col="actor" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-            <SortTh label="Document" col="document" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-            <SortTh label="Change" col="change" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-            <SortTh label="Category" col="category" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
-          </tr>
-        </thead>
-        <tbody>
-          {sortRows(rows, sort, (r, key) => {
-            if (key === "num") return Number(r.id) || 0;
-            if (key === "date") return r.created_at || "";
-            if (key === "actor") return r.actor || "";
-            if (key === "document") return r.email_id || "";
-            if (key === "change") return r.change_type || "";
-            if (key === "category") return r.category || "";
-            return "";
-          }).map((r) => (
-            <tr key={r.id}>
-              <td>{r.id}</td>
-              <td>{(r.created_at || "").slice(0, 19).replace("T", " ")}</td>
-              <td><span className={`chip ${r.actor}`}>{r.actor}</span></td>
-              <td>{r.email_id}</td>
-              <td>{r.change_type}</td>
-              <td><span className={`chip ${r.category}`}>{r.category}</span></td>
+      <div className="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <SortTh className="hide-sm" label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh label="Actor" col="actor" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh label="Document" col="document" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh label="Change" col="change" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh className="hide-sm" label="Category" col="category" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sortRows(rows, sort, (r, key) => {
+              if (key === "num") return Number(r.id) || 0;
+              if (key === "date") return r.created_at || "";
+              if (key === "actor") return r.actor || "";
+              if (key === "document") return r.email_id || "";
+              if (key === "change") return r.change_type || "";
+              if (key === "category") return r.category || "";
+              return "";
+            }).map((r) => (
+              <tr key={r.id}>
+                <td className="hide-sm">{r.id}</td>
+                <td>{(r.created_at || "").slice(0, 16).replace("T", " ")}</td>
+                <td><span className={`chip ${r.actor}`}>{r.actor}</span></td>
+                <td>{r.email_id}</td>
+                <td>{r.change_type}</td>
+                <td className="hide-sm"><span className={`chip ${r.category}`}>{r.category}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {exportOn && (
         <div className="modal-back" onClick={() => setExportOn(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
