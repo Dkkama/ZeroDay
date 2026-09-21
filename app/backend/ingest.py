@@ -60,7 +60,7 @@ def fetch_imap(cfg: dict, limit: int = 20) -> tuple[Path, list[dict]]:
     folder = cfg.get("folder") or "INBOX"
     tls = bool(cfg.get("tls", True))
 
-    mailbox = imaplib.IMAP4_SSL(host, port) if tls else imaplib.IMAP4(host, port)
+    mailbox = imaplib.IMAP4_SSL(host, port, timeout=8) if tls else imaplib.IMAP4(host, port, timeout=8)
     mailbox.login(user, password)
     mailbox.select(folder)
     _, data = mailbox.search(None, "ALL")

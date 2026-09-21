@@ -69,10 +69,14 @@ class Store:
                     raise ValueError("llm_provider must be cursor or vertex")
                 settings["llm_provider"] = provider
             if "imap" in patch and isinstance(patch["imap"], dict):
+                incoming = dict(patch["imap"])
+                pwd = incoming.get("password")
+                if pwd in (None, "", "••••••"):
+                    incoming.pop("password", None)
                 settings["imap"].update({
-                    k: patch["imap"][k]
+                    k: incoming[k]
                     for k in ("host", "port", "tls", "username", "password", "folder")
-                    if k in patch["imap"]
+                    if k in incoming
                 })
             self._write()
             return deepcopy(settings)
