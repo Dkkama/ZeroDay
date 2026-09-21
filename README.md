@@ -32,7 +32,13 @@ gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregi
 gcloud run deploy zeroday --source . --project hackathon-2026-509207 --region asia-southeast1 --allow-unauthenticated --memory 2Gi --cpu 2 --timeout 300 --set-env-vars GCP_PROJECT=hackathon-2026-509207,VERTEX_LOCATION=global
 ```
 
-After it is up: Settings → **Load one email with attachments**, then **Process one email — Vertex**. Do not process the full 520 on Vertex.
+After it is up: Settings → **Process one email — Vertex**. Watch Jobs, then Inbox for `live_00N`. Do not process the full 520 on Vertex.
+
+Cloud Run is idle (scale to zero) when nobody hits the URL. In-flight work only continues during that HTTP request. IMAP **Fetch now** and the Vertex demo button run to completion in the request. A poll interval only works while an instance is awake. To pull mail with nobody on the site, set `CRON_SECRET` and add Cloud Scheduler:
+
+```bash
+gcloud scheduler jobs create http zeroday-imap --project hackathon-2026-509207 --location asia-southeast1 --schedule="every 2 minutes" --uri="https://YOUR-SERVICE.run.app/api/cron/imap" --http-method=POST --headers="X-Cron-Secret=YOUR_SECRET"
+```
 
 Project used by the Vertex smoke test: `hackathon-2026-509207`.
 

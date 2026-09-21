@@ -24,6 +24,7 @@ def default_state() -> dict:
                 "username": "",
                 "password": "",
                 "folder": "INBOX",
+                "poll_seconds": 0,
                 "last_sync": None,
                 "status": "disconnected",
             },
@@ -73,9 +74,14 @@ class Store:
                 pwd = incoming.get("password")
                 if pwd in (None, "", "••••••"):
                     incoming.pop("password", None)
+                if "poll_seconds" in incoming:
+                    try:
+                        incoming["poll_seconds"] = int(incoming["poll_seconds"] or 0)
+                    except (TypeError, ValueError):
+                        incoming["poll_seconds"] = 0
                 settings["imap"].update({
                     k: incoming[k]
-                    for k in ("host", "port", "tls", "username", "password", "folder")
+                    for k in ("host", "port", "tls", "username", "password", "folder", "poll_seconds")
                     if k in incoming
                 })
             self._write()

@@ -25,6 +25,7 @@ VERTEX_MODEL = os.environ.get("VERTEX_MODEL", "gemini-3-flash-preview")
 CURSOR_MODEL = os.environ.get("CURSOR_MODEL", "gemini-3-flash")
 
 VERTEX_MAX_BATCH = int(os.environ.get("VERTEX_MAX_BATCH", "3"))
+CRON_SECRET = os.environ.get("CRON_SECRET", "")
 
 COMPARE_FIELDS = [
     "shipper",
