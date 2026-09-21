@@ -21,12 +21,16 @@ async function req(path, opts = {}) {
     if (!path.includes("/login")) window.location.href = "/login";
   }
   if (!res.ok) {
+    const raw = await res.text();
     let detail = res.statusText;
-    try {
-      const data = await res.json();
-      detail = data.detail || JSON.stringify(data);
-    } catch {
-      detail = await res.text();
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        const d = data.detail;
+        detail = typeof d === "string" ? d : d ? JSON.stringify(d) : JSON.stringify(data);
+      } catch {
+        detail = raw.slice(0, 400);
+      }
     }
     throw new Error(detail);
   }

@@ -120,9 +120,9 @@ def empty_fields() -> dict:
 
 
 def field_state(si_val: str, bl_val: str, resolved: str | None) -> dict:
-    si_val = (si_val or "").strip()
-    bl_val = (bl_val or "").strip()
-    resolved = (resolved or "").strip()
+    si_val = str(si_val or "").strip()
+    bl_val = str(bl_val or "").strip()
+    resolved = str(resolved or "").strip()
     if resolved:
         source = "custom"
         if resolved == si_val:

@@ -49,6 +49,10 @@ def apply_decision(email: dict, attachments: list[dict], raw: dict) -> dict:
     for key, default in empty_fields().items():
         si_fields.setdefault(key, default)
         bl_fields.setdefault(key, default)
+        if si_fields.get(key) is not None:
+            si_fields[key] = str(si_fields[key])
+        if bl_fields.get(key) is not None:
+            bl_fields[key] = str(bl_fields[key])
     return {
         "category": raw.get("category") or "GENERAL",
         "status": raw.get("status") or "OK",
