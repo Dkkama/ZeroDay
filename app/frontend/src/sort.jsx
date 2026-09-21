@@ -1,5 +1,9 @@
-export function emailNum(id) {
-  const m = String(id || "").match(/(\d+)\s*$/);
+export function emailNum(rowOrId) {
+  if (rowOrId && typeof rowOrId === "object") {
+    if (rowOrId.seq != null && rowOrId.seq !== "") return Number(rowOrId.seq);
+    rowOrId = rowOrId.email_id;
+  }
+  const m = String(rowOrId || "").match(/^email_(\d+)$/);
   return m ? Number(m[1]) : 0;
 }
 

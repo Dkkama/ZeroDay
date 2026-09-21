@@ -85,14 +85,14 @@ export default function Comparison() {
             </thead>
             <tbody>
               {sortRows(queue, sort, (r, key) => {
-                if (key === "num") return emailNum(r.email_id);
+                if (key === "num") return emailNum(r);
                 if (key === "subject") return r.subject || r.email_id || "";
                 if (key === "date") return r.caught_at || "";
                 if (key === "reason") return `${statusLabel(r)} ${r.review_reason || (r.defect_fields || []).join(", ")}`;
                 return "";
               }).map((r) => (
                 <tr key={r.email_id} className="row" {...rowOpen(() => open(r))}>
-                  <td className="col-num">{emailNum(r.email_id)}</td>
+                  <td className="col-num">{emailNum(r)}</td>
                   <td className="col-subject">{r.subject || r.email_id}</td>
                   <td className="hide-sm">{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
                   <td>

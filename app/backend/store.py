@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import threading
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -11,6 +12,11 @@ from config import COMPARE_FIELDS, STATE_PATH
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def seed_seq(email_id: str) -> int | None:
+    m = re.fullmatch(r"email_(\d+)", str(email_id or ""))
+    return int(m.group(1)) if m else None
 
 
 def default_state() -> dict:
@@ -99,6 +105,8 @@ class Store:
         with self.lock:
             eid = rec["email_id"]
             prev = self.state["emails"].get(eid)
+            if rec.get("seq") is None:
+                rec["seq"] = (prev or {}).get("seq") or seed_seq(eid) or self._next_seq_locked()
             self.state["emails"][eid] = rec
             if change_type:
                 self._audit_locked(
@@ -126,10 +134,41 @@ class Store:
             rec = self.state["emails"].get(email_id)
             return deepcopy(rec) if rec else None
 
+    def _next_seq_locked(self) -> int:
+        nums = []
+        for rec in self.state["emails"].values():
+            if rec.get("seq") is not None:
+                nums.append(int(rec["seq"]))
+            else:
+                derived = seed_seq(rec.get("email_id") or "")
+                if derived is not None:
+                    nums.append(derived)
+        return (max(nums) if nums else 0) + 1
+
+    def _ensure_seqs_locked(self) -> bool:
+        changed = False
+        pending = []
+        for rec in self.state["emails"].values():
+            if rec.get("seq") is not None:
+                continue
+            derived = seed_seq(rec.get("email_id") or "")
+            if derived is not None:
+                rec["seq"] = derived
+                changed = True
+            else:
+                pending.append(rec)
+        pending.sort(key=lambda r: (r.get("caught_at") or "", r.get("email_id") or ""))
+        for rec in pending:
+            rec["seq"] = self._next_seq_locked()
+            changed = True
+        return changed
+
     def all_emails(self) -> list[dict]:
         with self.lock:
+            if self._ensure_seqs_locked():
+                self._write()
             rows = [deepcopy(v) for v in self.state["emails"].values()]
-        rows.sort(key=lambda r: r.get("email_id") or "")
+        rows.sort(key=lambda r: r.get("seq") or 0)
         return rows
 
     def update_email(self, email_id: str, patch: dict, actor: str,
@@ -217,7 +256,7 @@ def _label(category: str | None) -> str:
 
 def public_email(rec: dict, include_text: bool = False) -> dict:
     out = {k: rec.get(k) for k in (
-        "email_id", "from", "subject", "body", "caught_at", "source",
+        "email_id", "seq", "from", "subject", "body", "caught_at", "source",
         "category", "status", "review_reason", "has_defect", "defect_fields",
         "si_fields", "bl_fields", "resolved_fields", "human_validated", "fixed",
         "updated_at", "attachments",

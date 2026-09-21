@@ -33,7 +33,7 @@ export default function Inbox() {
   const openId = params.get("open");
   const openRow = rows.find((r) => r.email_id === openId);
   const shown = sortRows(rows, sort, (r, key) => {
-    if (key === "num") return emailNum(r.email_id);
+    if (key === "num") return emailNum(r);
     if (key === "id") return r.email_id || "";
     if (key === "subject") return r.subject || "";
     if (key === "date") return r.caught_at || "";
@@ -92,7 +92,7 @@ export default function Inbox() {
           <tbody>
             {shown.map((r) => (
               <tr key={r.email_id} className="row" {...rowOpen(() => open(r))}>
-                <td className="col-num">{emailNum(r.email_id)}</td>
+                <td className="col-num">{emailNum(r)}</td>
                 <td className="hide-sm">{r.email_id}</td>
                 <td className="col-subject">{r.subject}</td>
                 <td className="hide-sm">{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
