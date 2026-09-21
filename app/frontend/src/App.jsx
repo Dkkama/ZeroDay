@@ -7,6 +7,7 @@ import Inbox from "./pages/Inbox.jsx";
 import Comparison from "./pages/Comparison.jsx";
 import Audit from "./pages/Audit.jsx";
 import Settings from "./pages/Settings.jsx";
+import A11yControl from "./A11yControl.jsx";
 
 const NAV = [
   { to: "/", label: "Dashboard" },
@@ -90,6 +91,8 @@ function Guard({ children }) {
 
 export default function App() {
   return (
+    <>
+    <A11yControl />
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Guard><Dashboard /></Guard>} />
@@ -98,5 +101,6 @@ export default function App() {
       <Route path="/audit" element={<Guard><Audit /></Guard>} />
       <Route path="/settings" element={<Guard><Settings /></Guard>} />
     </Routes>
+    </>
   );
 }
