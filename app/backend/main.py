@@ -5,6 +5,7 @@ import hmac
 import json
 import threading
 import time
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -38,8 +39,8 @@ from exports import (
     to_json,
     to_xlsx,
 )
-from ingest import fetch_imap, ingest_zip
-from llm import classify, guard_vertex_batch
+from ingest import _find_inbox_root, fetch_imap, ingest_zip
+from llm import apply_decision, classify, classify_cursor_inbox, guard_vertex_batch
 from seed import (
     build_record,
     load_attachment,
@@ -151,6 +152,8 @@ _seed_lock = threading.Lock()
 
 
 def ensure_seed():
+    if store.settings().get("auto_seed") is False:
+        return
     if store.all_emails():
         return
     with _seed_lock:
@@ -354,9 +357,13 @@ def ingest_upload(file: UploadFile = File(...),
                   authorization: Optional[str] = Header(None)):
     require_auth(authorization)
     data = file.file.read()
-    root, emails = ingest_zip(data, file.filename or "upload.zip")
+    try:
+        root, emails = ingest_zip(data, file.filename or "upload.zip")
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError, zipfile.BadZipFile) as exc:
+        raise HTTPException(400, f"Could not read that zip: {exc}")
     provider = store.settings()["llm_provider"]
     job = store.add_job("upload", provider, len(emails))
+    store.update_job(job["id"], root=str(root))
     threading.Thread(target=_run_ingest, args=(job["id"], root, emails, "upload", provider),
                      daemon=True).start()
     return {"job": job, "count": len(emails)}
@@ -558,9 +565,15 @@ def export_audit(
     return rows
 
 
-def _run_ingest(job_id: int, root, emails, source, provider):
-    store.update_job(job_id, status="running")
-    done = failed = 0
+def _run_ingest(job_id: int, root, emails, source, provider, resume: bool = False):
+    current = next((j for j in store.jobs() if j["id"] == job_id), None)
+    done = (current or {}).get("done") or 0 if resume else 0
+    failed = (current or {}).get("failed") or 0 if resume else 0
+    store.update_job(job_id, status="running", done=done, failed=failed,
+                     error=None, root=str(root))
+    if provider == "cursor":
+        _run_ingest_cursor(job_id, root, emails, source, done, failed)
+        return
     try:
         guard_vertex_batch(provider, len(emails))
     except RuntimeError as exc:
@@ -587,6 +600,77 @@ def _run_ingest(job_id: int, root, emails, source, provider):
             store.update_job(job_id, error=str(exc))
         store.update_job(job_id, done=done, failed=failed)
     store.update_job(job_id, status="done" if not failed else "failed", done=done, failed=failed)
+
+
+def _run_ingest_cursor(job_id: int, root, emails, source, done: int, failed: int):
+    from seed import build_record
+
+    lock = threading.Lock()
+
+    def on_each(email, decision, error):
+        nonlocal done, failed
+        rec = build_record(email, {}, root, source=source)
+        if error or not decision:
+            with lock:
+                failed += 1
+                store.upsert_email(rec, actor="program")
+                store.update_job(job_id, done=done, failed=failed,
+                                 error=str(error or "classify failed")[:300])
+            return
+        rec.update(apply_decision(email, rec["attachments"], decision))
+        rec["processed_live"] = True
+        with lock:
+            done += 1
+            store.upsert_email(rec, actor="program")
+            store.update_job(job_id, done=done, failed=failed)
+
+    try:
+        classify_cursor_inbox(emails, root, on_each)
+    except Exception as exc:
+        store.update_job(job_id, status="failed", error=str(exc)[:300], done=done, failed=failed)
+        return
+    store.update_job(job_id, status="done" if not failed else "failed", done=done, failed=failed)
+
+
+def _resume_running_jobs():
+    for job in store.jobs():
+        if job.get("status") != "running" or job.get("provider") != "cursor":
+            continue
+        root = Path(job["root"]) if job.get("root") else None
+        if root is None or not (root / "inbox").is_dir():
+            root = _latest_inbox_root()
+        if root is None:
+            store.update_job(job["id"], status="failed", error="upload folder missing")
+            continue
+        emails = []
+        for path in sorted((root / "inbox").glob("*.json")):
+            if path.name.startswith("._"):
+                continue
+            emails.append(json.loads(path.read_text(encoding="utf-8")))
+        pending = []
+        for email in emails:
+            rec = store.get_email(email["email_id"])
+            if rec and rec.get("processed_live"):
+                continue
+            pending.append(email)
+        threading.Thread(
+            target=_run_ingest,
+            args=(job["id"], root, pending, job.get("kind") or "upload", "cursor", True),
+            daemon=True,
+        ).start()
+
+
+def _latest_inbox_root():
+    if not UPLOAD_DIR.exists():
+        return None
+    dirs = sorted((p for p in UPLOAD_DIR.iterdir() if p.is_dir()),
+                  key=lambda p: p.stat().st_mtime, reverse=True)
+    for dest in dirs:
+        try:
+            return _find_inbox_root(dest)
+        except FileNotFoundError:
+            continue
+    return None
 
 
 def _run_process(job_id: int, ids: list[str], provider: str):
@@ -636,6 +720,7 @@ def _imap_poll_loop():
 def startup():
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     threading.Thread(target=_imap_poll_loop, daemon=True).start()
+    _resume_running_jobs()
 
 
 FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"

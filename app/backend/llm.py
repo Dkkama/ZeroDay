@@ -64,6 +64,93 @@ def apply_decision(email: dict, attachments: list[dict], raw: dict) -> dict:
     }
 
 
+def _cursor_api() -> dict:
+    sys.path.insert(0, str(ROOT / "sdoc_eval"))
+    import run as runner  # noqa: E402
+
+    key = os.environ.get("CURSOR_API_KEY") or os.environ.get("API_KEY") or ""
+    if not key:
+        raise RuntimeError("CURSOR_API_KEY is not set")
+    # Same defaults as sdoc_eval/run.py: warm VMs, 8 emails per follow-up,
+    # 5 follow-ups/minute and 280/hour.
+    return runner, {
+        "key": key,
+        "base": os.environ.get("CURSOR_API_BASE", "https://api.cursor.com"),
+        "model": CURSOR_MODEL,
+        "timeout": 300,
+        "create_timeout": 180,
+        "poll": 3.0,
+        "no_reuse": False,
+        "recycle_every": 0,
+        "followup_limiter": runner.RateLimiter([(5, 60.0), (280, 3600.0)]),
+    }
+
+
+def classify_cursor_inbox(emails: list[dict], root, on_each) -> None:
+    """Classify with the eval runner's warm-agent settings, not one VM per email."""
+    import queue
+    import threading
+
+    if not emails:
+        return
+    runner, api = _cursor_api()
+    sys.path.insert(0, str(ROOT / "sdoc-hackathon-docker" / "server"))
+    from loader import Inbox  # noqa: E402
+
+    system = system_prompt().rstrip() + "\n\n" + runner.BATCH_ADDENDUM
+    inbox = Inbox(str(root))
+    batch_size = 8
+    workers = 3 if len(emails) > batch_size else 1
+    work_q = queue.Queue()
+    for email in emails:
+        work_q.put(email)
+
+    def take(n):
+        grabbed = []
+        for _ in range(n):
+            try:
+                grabbed.append(work_q.get_nowait())
+            except queue.Empty:
+                break
+        return grabbed
+
+    def worker_loop(worker_id):
+        sess = runner.AgentSession(api, worker_id=worker_id)
+        pending = []
+        try:
+            while True:
+                if not pending:
+                    pending = take(batch_size)
+                if not pending:
+                    return
+                try:
+                    rows, leftover = runner.process_batch(
+                        pending, inbox, system, api, 2, False,
+                        vision=False, no_images=False,
+                        session=sess, batch_size=batch_size,
+                    )
+                    for email, rec, log in rows:
+                        err = log.get("error")
+                        on_each(email, None if err else rec, err)
+                    pending = leftover
+                except Exception as err:
+                    message = f"{type(err).__name__}: {err}"
+                    for email in pending:
+                        on_each(email, None, message)
+                    pending = []
+        finally:
+            sess.close()
+
+    threads = [
+        threading.Thread(target=worker_loop, args=(i,), name=f"sdoc-w{i}")
+        for i in range(workers)
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+
 def classify_cursor(email: dict, attachments: list[dict]) -> dict:
     sys.path.insert(0, str(ROOT / "sdoc_eval"))
     import run as runner  # noqa: E402

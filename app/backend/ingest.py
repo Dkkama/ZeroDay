@@ -24,17 +24,39 @@ def ingest_zip(data: bytes, name: str = "upload.zip") -> tuple[Path, list[dict]]
     root = _find_inbox_root(dest)
     emails = []
     for path in sorted((root / "inbox").glob("*.json")):
-        emails.append(json.loads(path.read_text()))
+        if path.name.startswith("._"):
+            continue
+        emails.append(json.loads(path.read_text(encoding="utf-8")))
+    if not emails:
+        raise FileNotFoundError("inbox/ has no email json files")
     return root, emails
 
 
+def _junk(path: Path) -> bool:
+    return any(part == "__MACOSX" or part.startswith(".") for part in path.parts)
+
+
 def _find_inbox_root(dest: Path) -> Path:
-    if (dest / "inbox").is_dir():
-        return dest
+    candidates = []
+    if (dest / "inbox").is_dir() and not _junk(dest / "inbox"):
+        candidates.append(dest)
     for child in dest.rglob("inbox"):
-        if child.is_dir():
-            return child.parent
-    raise FileNotFoundError("zip has no inbox/ folder")
+        if child.is_dir() and not _junk(child.relative_to(dest)):
+            candidates.append(child.parent)
+    best = None
+    best_n = 0
+    seen = set()
+    for root in candidates:
+        key = str(root.resolve())
+        if key in seen:
+            continue
+        seen.add(key)
+        n = len([p for p in (root / "inbox").glob("*.json") if not p.name.startswith("._")])
+        if n > best_n:
+            best, best_n = root, n
+    if best is None:
+        raise FileNotFoundError("zip has no inbox/ folder")
+    return best
 
 
 def decode_mime(value) -> str:
