@@ -312,8 +312,10 @@ tr.row:hover { background: var(--hover); }
 .toolbar select, select, .dark-select {
   appearance: none;
   -webkit-appearance: none;
-  padding: 8px 28px 8px 10px;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aabb6' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  -moz-appearance: none;
+  padding: 8px 32px 8px 10px;
+  background-color: var(--bg);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23eef3f6' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
   background-repeat: no-repeat;
   background-position: right 8px center;
   background-size: 12px 12px;
@@ -321,7 +323,20 @@ tr.row:hover { background: var(--hover); }
 html[data-theme="light"] .toolbar select,
 html[data-theme="light"] select,
 html[data-theme="light"] .dark-select {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235c6b76' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-color: var(--bg);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23152028' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px 12px;
+}
+html[data-theme="hc"] .toolbar select,
+html[data-theme="hc"] select,
+html[data-theme="hc"] .dark-select {
+  background-color: var(--bg);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px 12px;
 }
 select option, .dark-select option {
   background: var(--bg-2);
