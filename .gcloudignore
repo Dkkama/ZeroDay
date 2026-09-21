@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+.venv
+venv
+node_modules
+**/__pycache__/
+**/*.pyc
+app/backend/data/
+app/frontend/dist/
+sdoc-hackathon-bundle/
+sdoc_eval.zip
+*.pem
+*.p12
+service-account*.json
+.DS_Store
+*.log

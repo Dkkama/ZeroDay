@@ -24,9 +24,15 @@ First Dashboard load seeds the 520 sample emails from `sdoc-hackathon-docker/dat
 
 ## Cloud Run
 
+From the repo root (do not commit `.env`). First request seeds the 520-email sample and can take about a minute.
+
 ```bash
-gcloud run deploy zeroday --source . --region asia-southeast1 --allow-unauthenticated
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com aiplatform.googleapis.com --project hackathon-2026-509207
+
+gcloud run deploy zeroday --source . --project hackathon-2026-509207 --region asia-southeast1 --allow-unauthenticated --memory 2Gi --cpu 2 --timeout 300 --set-env-vars GCP_PROJECT=hackathon-2026-509207,VERTEX_LOCATION=global
 ```
+
+After it is up: Settings → **Load one email with attachments**, then **Process one email — Vertex**. Do not process the full 520 on Vertex.
 
 Project used by the Vertex smoke test: `hackathon-2026-509207`.
 
