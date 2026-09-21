@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import FilePreview from "./FilePreview.jsx";
 import { statusClass, statusLabel } from "../status";
-import { SortTh, emailNum, nextSort, rowOpen, sortRows } from "../sort.jsx";
+import { SortTh, emailNum, nextSort, sortRows } from "../sort.jsx";
 import { ExtractText, FIELD_LABELS, mismatchNeedles, valuesDiffer } from "../docs.jsx";
 
 export default function Comparison() {
@@ -62,7 +62,7 @@ export default function Comparison() {
     return (
       <div>
         <div className="header"><h1>Review requests</h1></div>
-        <p className="muted">Open a row to review. On a phone, tap; on a desktop, double-click.</p>
+        <p className="muted">Click a row to review it.</p>
         {err && <div className="error">{err}</div>}
         <div className="table-scroll">
           <table>
@@ -82,7 +82,7 @@ export default function Comparison() {
                 if (key === "reason") return `${statusLabel(r)} ${r.review_reason || (r.defect_fields || []).join(", ")}`;
                 return "";
               }).map((r) => (
-                <tr key={r.email_id} className="row" {...rowOpen(() => open(r))}>
+                <tr key={r.email_id} className="row" onClick={() => open(r)}>
                   <td className="col-num">{emailNum(r)}</td>
                   <td className="col-subject">{r.subject || r.email_id}</td>
                   <td className="hide-sm">{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
