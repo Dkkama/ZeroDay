@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import ExportDialog from "./ExportDialog.jsx";
 import { statusClass, statusLabel } from "../status";
+import { SortTh, emailNum, nextSort, sortRows } from "../sort";
 
 export default function Inbox() {
   const nav = useNavigate();
@@ -13,6 +14,7 @@ export default function Inbox() {
   const [status, setStatus] = useState(params.get("status") || "");
   const [exportOn, setExportOn] = useState(false);
   const [err, setErr] = useState("");
+  const [sort, setSort] = useState({ key: "num", dir: "desc" });
 
   useEffect(() => {
     const query = {};
@@ -29,6 +31,15 @@ export default function Inbox() {
 
   const openId = params.get("open");
   const openRow = rows.find((r) => r.email_id === openId);
+  const shown = sortRows(rows, sort, (r, key) => {
+    if (key === "num") return emailNum(r.email_id);
+    if (key === "id") return r.email_id || "";
+    if (key === "subject") return r.subject || "";
+    if (key === "date") return r.caught_at || "";
+    if (key === "category") return r.category || "";
+    if (key === "status") return statusLabel(r);
+    return "";
+  });
 
   return (
     <div>
@@ -65,13 +76,18 @@ export default function Inbox() {
       <table>
         <thead>
           <tr>
-            <th>#</th><th>Id</th><th>Subject</th><th>Date</th><th>Category</th><th>Status</th>
+            <SortTh label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+            <SortTh label="Id" col="id" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+            <SortTh label="Subject" col="subject" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+            <SortTh label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+            <SortTh label="Category" col="category" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+            <SortTh label="Status" col="status" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
+          {shown.map((r) => (
             <tr key={r.email_id} className="row" onDoubleClick={() => open(r)}>
-              <td>{i + 1}</td>
+              <td>{emailNum(r.email_id)}</td>
               <td>{r.email_id}</td>
               <td>{r.subject}</td>
               <td>{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>

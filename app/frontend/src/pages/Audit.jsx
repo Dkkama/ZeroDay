@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, download } from "../api";
 import { auditRowsToPdf } from "../pdf.js";
+import { SortTh, nextSort, sortRows } from "../sort";
 
 export default function Audit() {
   const [rows, setRows] = useState([]);
@@ -8,6 +9,7 @@ export default function Audit() {
   const [limit, setLimit] = useState(200);
   const [fmt, setFmt] = useState("csv");
   const [err, setErr] = useState("");
+  const [sort, setSort] = useState({ key: "num", dir: "desc" });
 
   useEffect(() => {
     api.audit(500).then(setRows).catch((e) => setErr(e.message));
@@ -42,10 +44,25 @@ export default function Audit() {
       {err && <div className="error">{err}</div>}
       <table>
         <thead>
-          <tr><th>#</th><th>Date</th><th>Actor</th><th>Document</th><th>Change</th><th>Category</th></tr>
+          <tr>
+            <SortTh label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+            <SortTh label="Date" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+            <SortTh label="Actor" col="actor" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+            <SortTh label="Document" col="document" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+            <SortTh label="Change" col="change" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+            <SortTh label="Category" col="category" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+          </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
+          {sortRows(rows, sort, (r, key) => {
+            if (key === "num") return Number(r.id) || 0;
+            if (key === "date") return r.created_at || "";
+            if (key === "actor") return r.actor || "";
+            if (key === "document") return r.email_id || "";
+            if (key === "change") return r.change_type || "";
+            if (key === "category") return r.category || "";
+            return "";
+          }).map((r) => (
             <tr key={r.id}>
               <td>{r.id}</td>
               <td>{(r.created_at || "").slice(0, 19).replace("T", " ")}</td>

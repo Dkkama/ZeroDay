@@ -261,6 +261,8 @@ a { color: inherit; }
 table { width: 100%; border-collapse: collapse; font-size: 16px; }
 th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { color: var(--muted); font-weight: 500; font-size: 14px; }
+.sort-th { cursor: pointer; user-select: none; white-space: nowrap; }
+.sort-th:hover, .sort-on { color: var(--text); }
 tr.row { cursor: pointer; }
 tr.row:hover { background: var(--hover); }
 
@@ -284,11 +286,25 @@ tr.row:hover { background: var(--hover); }
 
 .toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
 .toolbar input, .toolbar select, select, .dark-select {
-  background: var(--bg);
+  background-color: var(--bg);
   color: var(--text);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 8px 10px;
+}
+.toolbar select, select, .dark-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 8px 28px 8px 10px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aabb6' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px 12px;
+}
+html[data-theme="light"] .toolbar select,
+html[data-theme="light"] select,
+html[data-theme="light"] .dark-select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235c6b76' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
 }
 select option, .dark-select option {
   background: var(--bg-2);

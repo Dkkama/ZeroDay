@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import FilePreview from "./FilePreview.jsx";
 import { statusClass, statusLabel } from "../status";
+import { SortTh, emailNum, nextSort, sortRows } from "../sort";
 
 const LABELS = {
   shipper: "Shipper",
@@ -20,6 +21,7 @@ export default function Comparison() {
   const [doc, setDoc] = useState(null);
   const [editing, setEditing] = useState(false);
   const [err, setErr] = useState("");
+  const [sort, setSort] = useState({ key: "num", dir: "desc" });
   const id = params.get("id");
 
   async function loadList() {
@@ -73,12 +75,23 @@ export default function Comparison() {
         {err && <div className="error">{err}</div>}
         <table>
           <thead>
-            <tr><th>#</th><th>File / subject</th><th>Date caught</th><th>Reason</th></tr>
+            <tr>
+              <SortTh label="#" col="num" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh label="File / subject" col="subject" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh label="Date caught" col="date" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+              <SortTh label="Reason" col="reason" sort={sort} onSort={(col) => setSort((s) => nextSort(s, col))} />
+            </tr>
           </thead>
           <tbody>
-            {queue.map((r, i) => (
+            {sortRows(queue, sort, (r, key) => {
+              if (key === "num") return emailNum(r.email_id);
+              if (key === "subject") return r.subject || r.email_id || "";
+              if (key === "date") return r.caught_at || "";
+              if (key === "reason") return `${statusLabel(r)} ${r.review_reason || (r.defect_fields || []).join(", ")}`;
+              return "";
+            }).map((r) => (
               <tr key={r.email_id} className="row" onDoubleClick={() => open(r)}>
-                <td>{i + 1}</td>
+                <td>{emailNum(r.email_id)}</td>
                 <td>{r.subject || r.email_id}</td>
                 <td>{(r.caught_at || "").slice(0, 16).replace("T", " ")}</td>
                 <td>
