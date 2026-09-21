@@ -29,10 +29,9 @@ export default function Login() {
         <input value={email} onChange={(e) => setEmail(e.target.value)} />
         <label>Password</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <div style={{ height: 16 }} />
         <button className="btn primary" type="submit">Enter desk</button>
         {err && <div className="error">{err}</div>}
-        <p className="muted" style={{ marginTop: 16 }}>Demo clerk: clerk@zeroday.local / clerk123</p>
+        <p className="muted">Demo clerk: clerk@zeroday.local / clerk123</p>
       </form>
     </div>
   );
