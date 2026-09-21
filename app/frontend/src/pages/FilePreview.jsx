@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { attachmentUrl, token } from "../api";
 
+function isTextFile(ext) {
+  return ["txt", "csv", "json", "xml", "md", "log"].includes((ext || "").toLowerCase());
+}
+
+function isImage(ext) {
+  return ["png", "jpg", "jpeg", "gif", "webp"].includes((ext || "").toLowerCase());
+}
+
 function isSpreadsheet(att) {
   const name = (att?.filename || "").toLowerCase();
   const ext = (att?.ext || "").toLowerCase();
@@ -117,7 +125,7 @@ export default function FilePreview({ emailId, att }) {
       });
       if (!res.ok) throw new Error("Could not open file");
       const ext = (att.ext || "").toLowerCase();
-      if (ext === "txt" || ext === "csv") {
+      if (isTextFile(ext)) {
         const body = await res.text();
         if (!dead) setText(body);
         return;
@@ -146,11 +154,12 @@ export default function FilePreview({ emailId, att }) {
     <>
       {spreadsheet && <SheetGrid data={sheet || parseExtractedSheet(att.text)} />}
       {!spreadsheet && ext === "pdf" && url && <iframe title={att.filename} src={url} />}
-      {!spreadsheet && (ext === "txt" || ext === "csv" || text) && (
+      {!spreadsheet && isImage(ext) && url && <img className="preview-img" alt={att.filename} src={url} />}
+      {!spreadsheet && (isTextFile(ext) || text) && (
         <pre className="pre">{text || att.text}</pre>
       )}
-      {!spreadsheet && url && ext !== "pdf" && (
-        <pre className="pre">{att.text || `${att.filename}`}</pre>
+      {!spreadsheet && !isTextFile(ext) && ext !== "pdf" && !isImage(ext) && (
+        <pre className="pre">{text || att.text || att.filename}</pre>
       )}
       {err && <p className="muted">{err}</p>}
       {!spreadsheet && !url && !text && !err && <p className="muted">Loading {att.filename}…</p>}
