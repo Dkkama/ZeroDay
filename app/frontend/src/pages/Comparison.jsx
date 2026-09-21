@@ -53,9 +53,8 @@ export default function Comparison() {
   async function validate() {
     await api.validate(id);
     const rows = await loadList();
-    const i = rows.findIndex((r) => r.email_id === id);
-    if (i >= 0) open(rows[i]);
-    else if (rows[0]) open(rows[0]);
+    const next = rows.find((r) => r.email_id !== id);
+    if (next) open(next);
     else { setParams({}); setDoc(null); }
   }
 

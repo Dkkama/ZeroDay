@@ -18,7 +18,7 @@
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
 body {
-  font-family: "IBM Plex Sans", sans-serif;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
 }
@@ -182,7 +182,7 @@ tr.row:hover { background: #1f2c34; }
   padding: 12px;
   overflow: auto;
   max-height: 280px;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 12px;
   white-space: pre-wrap;
 }
