@@ -43,6 +43,7 @@ export default function Settings() {
   }
 
   function saveProvider(llm_provider) {
+    if (llm_provider === "cursor") return;
     setSettings((current) => ({ ...(current || {}), llm_provider }));
     setErr("");
     setMsg(`Using ${llm_provider}.`);
@@ -78,10 +79,11 @@ export default function Settings() {
 
       <div className="panel" style={{ marginBottom: 16 }}>
         <h3>Model</h3>
-        <p className="muted">Cursor and Vertex both run three workers, eight emails per prompt, and at most five prompts a minute.</p>
+        <p className="muted">Vertex runs three prompts at a time, eight emails in each. Cursor is turned off on this deployment.</p>
         <div className="btn-row">
-          <button className={`btn ${settings?.llm_provider === "cursor" ? "primary" : ""}`}
-                  onClick={() => saveProvider("cursor")}>Test — Cursor</button>
+          <button className="btn" type="button" disabled title="Cursor is turned off on this deployment">
+            Test — Cursor
+          </button>
           <button className={`btn ${settings?.llm_provider === "vertex" ? "primary" : ""}`}
                   onClick={() => saveProvider("vertex")}>Production demo — Vertex</button>
         </div>
