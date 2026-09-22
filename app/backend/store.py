@@ -228,6 +228,12 @@ class Store:
         with self.lock:
             return deepcopy(self.state["jobs"])
 
+    def put_file(self, email_id: str, filename: str, data: bytes) -> None:
+        return None
+
+    def get_file(self, email_id: str, filename: str) -> bytes | None:
+        return None
+
     def reset_workspace(self):
         with self.lock:
             self.state = default_state()

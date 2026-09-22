@@ -29,6 +29,7 @@ class FirestoreStore:
         self.emails = self.db.collection("emails")
         self.audit_col = self.db.collection("audit")
         self.jobs_col = self.db.collection("jobs")
+        self.files = self.db.collection("files")
         self.settings_ref = self.db.collection("settings").document("app")
         self.meta_ref = self.db.collection("meta").document("counters")
         if not self.settings_ref.get().exists:
@@ -175,11 +176,28 @@ class FirestoreStore:
         rows.sort(key=lambda r: r.get("id") or 0, reverse=True)
         return rows
 
+    def put_file(self, email_id: str, filename: str, data: bytes) -> None:
+        self.files.document(f"{email_id}__{filename}").set({
+            "email_id": email_id,
+            "filename": filename,
+            "data": data,
+        })
+
+    def get_file(self, email_id: str, filename: str) -> bytes | None:
+        snap = self.files.document(f"{email_id}__{filename}").get()
+        if not snap.exists:
+            return None
+        data = (snap.to_dict() or {}).get("data")
+        if isinstance(data, str):
+            return data.encode("utf-8")
+        return data or None
+
     def reset_workspace(self):
         with self.lock:
             self._wipe(self.emails)
             self._wipe(self.audit_col)
             self._wipe(self.jobs_col)
+            self._wipe(self.files)
             state = default_state()
             self.settings_ref.set(_clean(state["settings"]))
             self.meta_ref.set({"next_audit": 1, "next_job": 1})

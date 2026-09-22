@@ -131,6 +131,12 @@ export default function FilePreview({ emailId, att, needles = [] }) {
         if (!dead) setText(body);
         return;
       }
+      const type = (res.headers.get("content-type") || "").toLowerCase();
+      if (ext === "pdf" && !type.includes("pdf")) {
+        const body = await res.text();
+        if (!dead) setText(body || att.text || "");
+        return;
+      }
       const blob = await res.blob();
       if (!dead) setUrl(URL.createObjectURL(blob));
     }

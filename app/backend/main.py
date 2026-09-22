@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import mimetypes
 import threading
 import time
 import zipfile
@@ -232,6 +233,24 @@ def get_email(email_id: str, authorization: Optional[str] = Header(None)):
     return public_email(rec, include_text=True)
 
 
+def _file_bytes(email_id: str, att: dict) -> bytes | None:
+    path = Path(att.get("abs") or "")
+    if path.is_file():
+        return path.read_bytes()
+    name = att.get("filename")
+    if not name:
+        return None
+    return store.get_file(email_id, name)
+
+
+def _keep_files(rec: dict) -> None:
+    for att in rec.get("attachments") or []:
+        path = Path(att.get("abs") or "")
+        name = att.get("filename")
+        if name and path.is_file():
+            store.put_file(rec["email_id"], name, path.read_bytes())
+
+
 @app.get("/api/emails/{email_id}/attachments/{filename}")
 def get_attachment(email_id: str, filename: str,
                    authorization: Optional[str] = Header(None)):
@@ -241,12 +260,13 @@ def get_attachment(email_id: str, filename: str,
         raise HTTPException(404, "email not found")
     for att in rec.get("attachments") or []:
         if att.get("filename") == filename:
-            path = Path(att.get("abs") or "")
-            if path.exists():
-                return FileResponse(
-                    path,
-                    filename=filename,
-                    content_disposition_type="inline",
+            data = _file_bytes(email_id, att)
+            if data is not None:
+                media = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+                return Response(
+                    data,
+                    media_type=media,
+                    headers={"Content-Disposition": f'inline; filename="{filename}"'},
                 )
             text = att.get("text") or ""
             return Response(text.encode("utf-8"), media_type="text/plain")
@@ -263,11 +283,12 @@ def get_sheet(email_id: str, filename: str,
     for att in rec.get("attachments") or []:
         if att.get("filename") != filename:
             continue
-        path = Path(att.get("abs") or "")
-        if not path.exists():
+        data = _file_bytes(email_id, att)
+        if data is None:
             raise HTTPException(404, "file missing")
+        from io import BytesIO
         from openpyxl import load_workbook
-        wb = load_workbook(path, data_only=True, read_only=True)
+        wb = load_workbook(BytesIO(data), data_only=True, read_only=True)
         sheets = []
         for ws in wb.worksheets:
             rows = []
@@ -584,11 +605,14 @@ def _run_ingest(job_id: int, root, emails, source, provider, resume: bool = Fals
         from seed import build_record
         for email in emails:
             rec = build_record(email, {}, root, source=source)
+            _keep_files(rec)
             store.upsert_email(rec, actor="program")
         return
     from seed import build_record
     group = []
     built = [build_record(email, {}, root, source=source) for email in emails]
+    for rec in built:
+        _keep_files(rec)
     for rec in built:
         group.append(rec)
         if len(group) == 8:
@@ -607,6 +631,7 @@ def _run_ingest_cursor(job_id: int, root, emails, source, done: int, failed: int
     def on_each(email, decision, error):
         nonlocal done, failed
         rec = build_record(email, {}, root, source=source)
+        _keep_files(rec)
         if error or not decision:
             with lock:
                 failed += 1

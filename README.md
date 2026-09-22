@@ -1,77 +1,81 @@
 # ZeroDay — shipping document desk
 
-Clerk console for the Averis × Monash 2026 use case: classify an inbox, compare a Shipping Instruction (source of truth) to a draft Bill of Lading, escalate when the system cannot decide, and keep an audit trail.
+ZeroDay is a clerk console for the Averis × Monash 2026 use case. It classifies a shipping mailbox, compares a Shipping Instruction (the source of truth) to a draft Bill of Lading, escalates when it cannot decide, and keeps an audit trail.
 
-The checking model and prompt in `sdoc_eval/` scored **1.0000** on the 520-email v2 inbox (`gemini-3-flash`, `sdoc_eval/outputs/flash25_v2`). That run seeds this app so a demo does not burn Vertex quota.
+The user is a documentation clerk. Finding the right email takes a full read of every message, and a document request that is never opened never reaches the check. Comparing the two documents by hand is repetitive: names, ports, quantities, and weight must match, and the same fact is often written under a different label (“Port of Loading” and “Load Port”). A missed discrepancy becomes a correction, a delay, and another round of email.
 
-## Demo login
+Product description: [`docs/ZeroDay_Product_Description.pdf`](docs/ZeroDay_Product_Description.pdf).  
+Architecture, implementation, challenges, and roadmap: [`docs/ZeroDay_Documentation.pdf`](docs/ZeroDay_Documentation.pdf).
+
+## Live desk
+
+https://zeroday-316196081380.asia-southeast1.run.app
 
 - Email: `clerk@zeroday.local`
 - Password: `clerk123`
 
+The inbox already loaded there is the Vertex classification of all 520 emails.
+
+## Scores
+
+Both runs use `sdoc_eval/prompts/v1.md` and the 520-email set. Category is weighted 30%, defect detection 20%, and exact planted-defect detection 50%.
+
+| Run | Model | Final | Category | Planted defects |
+|---|---|---|---|---|
+| Model selection | `gemini-3-flash` via Cursor | 1.0000 | 1.0000 | 46 / 46 |
+| Live desk | `gemini-3-flash-preview` on Vertex | 1.0000 | 1.0000 | 46 / 46 |
+
+Selection evidence: `sdoc_eval/outputs/flash25_v2/score.json`. The live desk scored the same 520 emails on production.
+
 ## Local run
+
+Requires Python 3.11+, Node, and `gcloud` application-default credentials if you classify with Vertex. Copy `.env.example` to `.env`. Do not commit `.env`.
 
 ```bash
 python3 -m pip install -r app/backend/requirements.txt -r sdoc_eval/requirements.txt
 cd app/frontend && npm install && npm run dev
-# other terminal
-cd app/backend && PYTHONPATH=. uvicorn main:app --host 127.0.0.1 --port 8080
 ```
 
-Open http://127.0.0.1:5173 (Vite proxies `/api` to port 8080).
+In another terminal, from `app/backend`:
 
-First Dashboard load seeds the 520 sample emails from `sdoc-hackathon-docker/data_v2` plus the Flash labels. That can take about a minute.
+```bash
+PYTHONPATH=. uvicorn main:app --host 127.0.0.1 --port 8080
+```
+
+Open http://127.0.0.1:5173. Vite proxies `/api` to port 8080.
+
+`STORE_BACKEND=firestore` in `.env` uses the same Firestore database as production (`hackathon-2026-509207`, asia-southeast1). Leave it unset to keep a local JSON file at `app/backend/data/state.json`. The dashboard does not auto-load the sample. Settings → Load sample replaces the inbox with the 520-email set and the selection labels.
 
 ## Cloud Run
 
-From the repo root (do not commit `.env`). First request seeds the 520-email sample and can take about a minute.
+From the repo root:
 
 ```bash
-gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com aiplatform.googleapis.com --project hackathon-2026-509207
-
-gcloud run deploy zeroday --source . --project hackathon-2026-509207 --region asia-southeast1 --allow-unauthenticated --memory 2Gi --cpu 2 --timeout 300 --set-env-vars GCP_PROJECT=hackathon-2026-509207,VERTEX_LOCATION=global
+gcloud run deploy zeroday --source . \
+  --project hackathon-2026-509207 --region asia-southeast1 \
+  --allow-unauthenticated --memory 2Gi --cpu 2 --timeout 300 \
+  --update-env-vars GCP_PROJECT=hackathon-2026-509207,VERTEX_LOCATION=global,STORE_BACKEND=firestore,VERTEX_MAX_BATCH=2048
 ```
 
-After it is up: Settings → **Process one email — Vertex**. Watch Jobs, then Inbox for `live_00N`. Do not process the full 520 on Vertex.
-
-Cloud Run is idle (scale to zero) when nobody hits the URL. In-flight work only continues during that HTTP request. IMAP **Fetch now** and the Vertex demo button run to completion in the request. A poll interval only works while an instance is awake. To pull mail with nobody on the site, set `CRON_SECRET` and add Cloud Scheduler:
-
-```bash
-gcloud scheduler jobs create http zeroday-imap --project hackathon-2026-509207 --location asia-southeast1 --schedule="every 2 minutes" --uri="https://YOUR-SERVICE.run.app/api/cron/imap" --http-method=POST --headers="X-Cron-Secret=YOUR_SECRET"
-```
-
-Project used by the Vertex smoke test: `hackathon-2026-509207`.
+Cloud Run scales to zero when nobody is on the site. A long classification should not depend on a background thread inside one web request. IMAP polling only runs while an instance is awake. To fetch with nobody on the site, set `CRON_SECRET` and point Cloud Scheduler at `POST /api/cron/imap` with header `X-Cron-Secret`.
 
 ## Models
 
-| Setting | Provider | When to use |
+| Setting | Provider | How it runs |
 |---|---|---|
-| Test | Cursor Cloud Agents (`CURSOR_API_KEY`) | Volume processing. Large limit. |
-| Production demo | Vertex `gemini-3-flash-preview` | A few live calls for judges. Refuses large batches. |
+| Test | Cursor Cloud Agents (`CURSOR_API_KEY`) | Three warm machines, eight emails per follow-up. Used to choose the model. |
+| Production | Vertex `gemini-3-flash-preview` | Three prompts at once, eight emails in each prompt. One email is its own prompt. Nine is eight plus the leftover one. |
 
-`hackathon/test_gemini.py` is the original Vertex health check.
+Drop a zip on the Dashboard or the Inbox. The file has to contain `inbox/*.json` and `attachments/`. Classification starts with whichever provider is selected in Settings.
 
 ## Pages
 
-Left sidebar: Dashboard, Inbox, Comparison requests, Audit log. Footer: Settings.
-
-- **Dashboard** — counts, warning for document-check volume, charts
-- **Inbox** — every email; export results (choose succeeded / mismatched / review / categories)
-- **Comparison requests** — human queue; double-click to Validate / Edit SI vs BL
-- **Audit log** — program vs human, export N rows
-- **Settings** — sample load, zip upload, IMAP, model toggle, jobs, scorer `submission.json`
-
-## Decision log
-
-- **FastAPI + Vite React** — one Cloud Run URL, Python reuse of `extract.py` and the Cursor runner.
-- **Vertex now, not later** — teammate Docker already targeted `hackathon-2026-509207`.
-- **Keep Cursor** — Vertex quota is demo-only; Cursor is the soak-test path.
-- **Seed Flash 1.00** — judges can walk the product with zero live Gemini calls.
-- **Escalate, do not OCR image-only gold files** — the contest key wants `unreadable`, not a guessed OK.
-- **JSON workspace first** — Firestore is the production swap; prelim needs a working desk.
-- **IMAP + zip** — mail ingest without pretending Gmail OAuth is finished.
-- **Do not auto-run Vertex on 520** after deploy.
+- **Dashboard** — volume, and how many document checks need a person. A dropped zip opens Settings and starts classification.
+- **Inbox** — every email. The preview opens under the row. Export the current filter.
+- **Review** — mismatches and escalations. One click opens the case. Pick the SI value, the BL value, or type one; Validate moves to the next case.
+- **Audit** — program and human changes, with export.
+- **Settings** — model, sample load, zip drop, IMAP, jobs, and the `submission.json` export.
 
 ## Repo notes
 
-Do not commit `.env` or service-account keys. Validation evidence: `sdoc_eval/prompts/v1.md` and `sdoc_eval/outputs/flash25_v2/`.
+Do not commit `.env` or service-account keys. The comparison rules are `sdoc_eval/prompts/v1.md`.
